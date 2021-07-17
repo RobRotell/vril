@@ -1,0 +1,17 @@
+/*
+!.gitignore
+!app/
+!wp-config.php
+.htaccess
+vril-config.env
+
+app/*
+!app/plugins/
+!app/themes/
+
+app/plugins/*
+!app/plugins/loa-article-tracker
+!app/plugins/cine-movie-tracker
+
+app/themes/*
+!app/themes/pale
