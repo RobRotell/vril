@@ -1,17 +1,21 @@
 /*
 !.gitignore
-!app/
-!wp-config.php
-.htaccess
-vril-config.env
+!wp
+!app.js
+!package.json
 
-app/*
-!app/plugins/
-!app/themes/
+wp/*
+!wp/wp-config.php
+!wp/app
 
-app/plugins/*
-!app/plugins/loa-article-tracker
-!app/plugins/cine-movie-tracker
+wp/app/*
+!wp/app/mu-plugins
+!wp/app/plugins/
+!wp/app/themes/
 
-app/themes/*
-!app/themes/pale
+wp/app/plugins/*
+!wp/app/plugins/loa-article-tracker
+!wp/app/plugins/cine-movie-tracker
+
+wp/app/themes/*
+!wp/app/themes/pale

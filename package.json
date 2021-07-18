@@ -1,0 +1,15 @@
+{
+	"name": "vril-app",
+	"version": "0.0.1",
+	"main": "app.js",
+	"scripts": {},
+	"keywords": [],
+	"type": "module",
+	"author": "RobRotell",
+	"license": "ISC",
+	"description": "API for Cine and Loa",
+	"devDependencies": {
+		"file-type": "^16.5.1",
+		"sharp": "^0.28.3"
+	}
+}
