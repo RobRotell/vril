@@ -1,12 +1,12 @@
 import sharp from 'sharp';
 import { promises } from 'fs';
 import path from 'path';
+import FileType from 'file-type';
 
 
 ( async () => {
 
-	const assetsDir = './app/assets'
-
+	const assetsDir = './wp/app/assets'
 
 	const readAssetDir = async ( arg ) => {
 		const entries = await promises.readdir( arg )
@@ -26,27 +26,34 @@ import path from 'path';
 
 
 	const convertFile = async ( path ) => {
+		const fileType = await FileType.fromFile( path )
 
-		console.log( path )
-
-		doMe()
-		
-
-
+		if( undefined !== fileType && ( 'image/jpeg' === fileType.mime || 'image/png' === fileType.mime ) ) {
+			createWebp( path )
+			createAvif( path )
+		}
 	}
 
-	readAssetDir( assetsDir ).catch( console.error )
+
+	const createWebp = async( path ) => {
+		const newFilePath = path.replace( /\.[^/.]+$/, '.webp' )
+
+		sharp( path )
+			.webp()
+			.toFile( newFilePath, err => console.error( err ) )
+	}
 
 
+	const createAvif = async( path ) => {
+		const newFilePath = path.replace( /\.[^/.]+$/, '.avif' )
 
-	// const dir = await fs.promises.opendir( )
+		sharp( path )
+			.avif()
+			.toFile( newFilePath, err => console.error( err ) )
+	}
 
-	// const file = './the-dry-poster.jpg'
-	
-	// sharp( file )
-	// 	.avif()
-	// 	.toFile( './output.avif', err => {
-	// 		console.log( err )
-	// 	})
+
+	readAssetDir( assetsDir ).catch( err => console.log( err ) )
+
 
 }) () 
