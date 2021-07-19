@@ -96,10 +96,69 @@ add_action( 'login_head', function() {
 	?>
 
 	<style>
+		.login {
+			background-color: #f4f4f4;
+		}
+
+		#login {
+			max-width: 90%;
+			width: 360px;
+		}
+
+		#loginform {
+			margin-top: 40px;
+			padding: 32px 42px 42px;
+			border: none;
+			border-radius: 6px;
+			box-shadow: none;
+		}
+
+		.login form .input, 
+		.login input[type="password"], 
+		.login input[type="text"] {
+			border: none;
+			background-color: #f4f4f4;
+		}
+
+		#wp-submit {
+			background-color: #890709;
+			border: none;
+			transition: background-color .5s linear;
+		}
+		
+		#wp-submit:hover {
+			background-color: #CF1021;
+			transition: background-color .175s linear;
+		}
+
 		.login h1 a {
 			background-image: url( '<?php echo $logo_url; ?>' );
 		}
 	</style>
 
 	<?php
-});
+}, 9999 );
+
+
+// remove "Go to ..." link on login
+add_filter( 'login_site_html_link', '__return_false' );
+
+
+// remove "lost your password?" link
+add_filter( 'clean_url', function( string $url = '' ): string {
+	if( str_contains( $url, 'action=lostpassword' ) ) {
+		$url = '';
+	}
+
+	return $url;
+}, 9999 );
+
+
+// remove "lost your password?" text
+add_filter( 'gettext', function( string $translation = '' ): string {
+	if( did_action( 'login_head' ) && 'Lost your password?' === $translation ) {
+		$translation = '';
+	}
+
+	return $translation;
+}, 9999 );

@@ -23,10 +23,10 @@ class Endpoint
 
 	public function __construct()
 	{
-		$this->auth_key = get_option( Admin::$option_name );
+		// $this->auth_key = get_option( Admin::$option_name );
 
-		add_action( 'rest_api_init', 	[ $this, 'register_routes' ] );
-		add_filter( 'http_origin', 		[ $this, 'extension_origin_fix' ] );
+		// add_action( 'rest_api_init', 	[ $this, 'register_routes' ] );
+		// add_filter( 'http_origin', 		[ $this, 'extension_origin_fix' ] );
 	}
 
 

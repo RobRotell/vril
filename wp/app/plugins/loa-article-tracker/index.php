@@ -1,43 +1,44 @@
 <?php
 
 /**
- * Plugin Name: Loa Article Tracker
- * Plugin URI:  https://loa.robr.app
- * Description: Controls how Loa handles/displays articles
- * Version:     0.0.1
+ * Plugin Name: Loa
+ * Plugin URI:  https://vril.robr.app
+ * Description: Controls tracking, storage, and API for articles
+ * Version:     0.1.0
  * Author:      Rob
- * Author URI:  https://robrotell.com
+ * Author URI:  https://robrotell.dev
  *
  * Text Domain: loa
  */
-
-// namespace Loa_Article_Tracker; 
 
 
 defined( 'ABSPATH' ) || exit;
 
 
-class ArticleTracker
+class Loa
 {
-	public $plugin_path     = false;
-    public $plugin_inc_path = false;
-	public $plugin_url      = false;
-
-    // plugin classes
-    public $core        = null;
-    public $admin       = null;
-	public $endpoint    = null;
-	public $helpers 	= null;
-
-
 	protected static $_instance = null;
-	public static function _instance()
+
+
+    public static $plugin_url       = false;
+    public static $plugin_path      = false;
+    public static $plugin_path_inc  = false;
+
+
+    // subclasses
+    public $helper   = null;
+    public $core     = null;
+    public $endpoint = null;
+    public $admin    = null;
+    
+
+	public static function _instance(): self
 	{
-		if( !isset( self::$_instance ) ) {
-			$class_name = __CLASS__;
-			self::$_instance = new $class_name;
-		}
-		return self::$_instance;
+        if( null === self::$_instance ) {
+            self::$_instance = new self();
+        }
+
+        return self::$_instance;
     }
     
 
@@ -45,43 +46,46 @@ class ArticleTracker
     {
         $this->define();
         $this->includes();
+        $this->add_wp_hooks();
     }
 
 
-    public function define()
+    private function define(): void
     {
-		$this->plugin_path 		= untrailingslashit( plugin_dir_path( __FILE__ ) );
-		$this->plugin_inc_path 	= $this->plugin_path . '/includes';
-		$this->plugin_url  		= plugin_dir_url( __FILE__ );
+        self::$plugin_url 		= trailingslashit( plugin_dir_url( __FILE__ ) );
+        self::$plugin_path 		= trailingslashit( plugin_dir_path( __FILE__ ) );
+        self::$plugin_path_inc 	= trailingslashit( sprintf( '%sincludes/', self::$plugin_path ) );
     }
 
 
-    public function includes()
+    private function includes(): void
     {
-        $classes = [
-			'helpers',
-            'core',
-            'admin',
-            'response', // v2
-			'endpoint', // v2
-			'rest-endpoint', // v1
-        ];
+        require_once( self::$plugin_path_inc . 'classes/class-helper.php' );
+        require_once( self::$plugin_path_inc . 'classes/class-core.php' );
+        require_once( self::$plugin_path_inc . 'classes/class-endpoint.php' );
+        require_once( self::$plugin_path_inc . 'classes/class-admin.php' );
+    }
 
-        foreach( $classes as $class ) {
-            require_once( sprintf( '%s/class-%s.php', $this->plugin_inc_path, $class ) );
-        }
 
-		$this->helpers 	= new Loa_Article_Tracker\Helpers();
-        $this->core     = new Loa_Article_Tracker\Core();
-		$this->admin    = new Loa_Article_Tracker\Admin();
-		$this->endpoint = new Loa_Article_Tracker\Endpoint(); // v2
+	private function add_wp_hooks(): void
+	{
+		add_action( 'plugins_loaded', [ $this, 'load_classes' ] );
+	}    
+
+
+    public function load_classes(): void
+    {
+        $this->helper   = new Loa\Helper();
+        $this->core     = new Loa\Core();
+        $this->endpoint = new Loa\Endpoint();
+        $this->admin    = new Loa\Admin();
     }
 }
 
 
-function LoaArticleTracker() {
-    return ArticleTracker::_instance();
+function Loa() {
+    return Loa::_instance();
 }
 
 
-LoaArticleTracker();
+Loa();

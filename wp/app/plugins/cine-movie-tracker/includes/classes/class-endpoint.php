@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Movie_Tracker;
+namespace Cine;
 
 
 use WP_REST_Request;
@@ -20,12 +20,20 @@ class Endpoint
 
 	public function __construct()
 	{
+		$this->add_wp_hooks();
+	}
+
+
+	private function add_wp_hooks()
+	{
 		add_action( 'rest_api_init', [ $this, 'register_routes' ] );
 	}
 
 
 	public function register_routes()
 	{
+		$helper = Cine()->helper;
+
 		// grab all movies
 		register_rest_route(
 			self::NAMESPACE,
@@ -38,32 +46,32 @@ class Endpoint
 					'page'	=> [
 						'default'			=> 1,
 						'type'				=> 'string',
-						'sanitize_callback'	=> [ 'Movie_Tracker\Helper', 'convert_to_int' ],
+						'sanitize_callback'	=> [ $helper, 'convert_to_int' ],
 					],
 					'count'	=> [
 						'default'			=> 50,
 						'type'				=> 'string',
-						'sanitize_callback'	=> [ 'Movie_Tracker\Helper', 'convert_to_int' ],
+						'sanitize_callback'	=> [ $helper, 'convert_to_int' ],
 					],
 					'genre'	=> [
 						'default'			=> 0,
 						'type'				=> 'string',
-						'sanitize_callback'	=> [ 'Movie_Tracker\Helper', 'convert_to_int' ],
+						'sanitize_callback'	=> [ $helper, 'convert_to_int' ],
 					],
 					'keyword' => [
 						'default'			=> '',
 						'type'				=> 'string',
-						'sanitize_callback'	=> [ 'Movie_Tracker\Helper', 'sanitize_var' ],
+						'sanitize_callback'	=> [ $helper, 'sanitize_var' ],
 					],
 					'to_watch' => [
 						'default'			=> false,
 						'type'				=> 'string',
-						'sanitize_callback'	=> [ 'Movie_Tracker\Helper', 'convert_to_bool' ],
+						'sanitize_callback'	=> [ $helper, 'convert_to_bool' ],
 					],
 					'no_cache' => [
 						'default'			=> false,
 						'type'				=> 'string',
-						'sanitize_callback'	=> [ 'Movie_Tracker\Helper', 'convert_to_bool' ],
+						'sanitize_callback'	=> [ $helper, 'convert_to_bool' ],
 					]
 				]
 			]
@@ -80,7 +88,7 @@ class Endpoint
 				'args'		=> [
 					'id' 	=> [
 						'required'			=> true,
-						'sanitize_callback'	=> [ 'Movie_Tracker\Helper', 'convert_to_int' ]
+						'sanitize_callback'	=> [ $helper, 'convert_to_int' ]
 					]
 				]
 			]
@@ -103,12 +111,12 @@ class Endpoint
 					'title'	=> [
 						'required' 			=> true,
 						'type'				=> 'string',
-						'sanitize_callback'	=> [ 'Movie_Tracker\Helper', 'sanitize_var' ]
+						'sanitize_callback'	=> [ $helper, 'sanitize_var' ]
 					],
 					'limit' => [
 						'default'			=> 10,
 						'type'				=> 'string',
-						'sanitize_callback'	=> [ 'Movie_Tracker\Helper', 'convert_to_int' ]
+						'sanitize_callback'	=> [ $helper, 'convert_to_int' ]
 					]
 				]
 			]
@@ -131,12 +139,12 @@ class Endpoint
 					'id'	=> [
 						'required'			=> true,
 						'type'				=> 'string',
-						'sanitize_callback'	=> [ 'Movie_Tracker\Helper', 'convert_to_int' ]
+						'sanitize_callback'	=> [ $helper, 'convert_to_int' ]
 					],
 					'to_watch' => [
 						'default'			=> false,
 						'type'				=> 'string',
-						'sanitize_callback' => [ 'Movie_Tracker\Helper', 'convert_to_bool' ]
+						'sanitize_callback' => [ $helper, 'convert_to_bool' ]
 					]
 				]
 			]
@@ -159,12 +167,12 @@ class Endpoint
 					'id'	=> [
 						'required'			=> true,
 						'type'				=> 'string',
-						'sanitize_callback'	=> [ 'Movie_Tracker\Helper', 'convert_to_int' ]
+						'sanitize_callback'	=> [ $helper, 'convert_to_int' ]
 					],
 					'status' => [
 						'required'			=> true,
 						'type'				=> 'string',
-						'sanitize_callback' => [ 'Movie_Tracker\Helper', 'convert_to_bool' ]
+						'sanitize_callback' => [ $helper, 'convert_to_bool' ]
 					]
 				]
 			]
@@ -187,7 +195,7 @@ class Endpoint
 					'id'	=> [
 						'required'			=> true,
 						'type'				=> 'string',
-						'sanitize_callback'	=> [ 'Movie_Tracker\Helper', 'convert_to_int' ]
+						'sanitize_callback'	=> [ $helper, 'convert_to_int' ]
 					]
 				]
 			]
@@ -208,7 +216,7 @@ class Endpoint
 	 */
 	public function get_movies( WP_Rest_Request $request )
 	{
-		Helper::load_model( 'Movie Block' );
+		Cine()->helper::load_model( 'Movie Block' );
 
 		$page 		= $request->get_param( 'page' );
 		$count 		= $request->get_param( 'count' );

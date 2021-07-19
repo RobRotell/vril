@@ -1,10 +1,9 @@
 <?php
 
 
-namespace Movie_Tracker;
+namespace Cine;
 
 
-use Movie_Tracker;
 use Error;
 
 
@@ -42,7 +41,7 @@ class Helper
 	public static function convert_to_int( $var ): int 
 	{
 		if( is_array( $var ) && 1 === count( $var ) ) {
-			return self::convert_to_var( $var );
+			return self::convert_to_int( $var );
 		}
 
 		return (int)$var;
@@ -59,12 +58,14 @@ class Helper
 	 */
 	public static function get_genre_by_name( string $name, bool $id_only = false ) 
 	{
+		$taxonomy = Cine()->core::TAXONOMY;
+
 		$term = get_terms(
 			[
 				'hide_empty'	=> false,
-				'taxonomy'		=> Core::TAXONOMY,
 				'name' 			=> $name,
-				'number'		=> 1
+				'number'		=> 1,
+				'taxonomy'		=> $taxonomy,
 			]
 		);
 
@@ -74,8 +75,8 @@ class Helper
 
 		// if no results, create term
 		} else {
-			$new_term 	= wp_insert_term( $name, Core::TAXONOMY );
-			$term 		= get_term( $new_term['term_taxonomy_id'], Core::TAXONOMY );
+			$new_term 	= wp_insert_term( $name, $taxonomy );
+			$term 		= get_term( $new_term['term_taxonomy_id'], $taxonomy );
 		}
 
 		return ( $id_only ) ? $term->term_id : $term;
@@ -107,7 +108,7 @@ class Helper
 	{
 		$file = sprintf( 
 			'%smodels/class-%s.php', 
-			Movie_Tracker::$plugin_path_inc, 
+			Cine()::$plugin_path_inc, 
 			sanitize_title( $model ) 
 		);
 

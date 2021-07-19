@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Plugin Name: Cine Movie Tracker
+ * Plugin Name: Cine
  * Plugin URI:  https://vril.robr.app
- * Description: Controls how Cine returns/dislays movies
+ * Description: Controls tracking, storage, and API for movies
  * Version:     0.0.1
  * Author:      Rob
- * Author URI:  https://robrotell.com
+ * Author URI:  https://robrotell.dev
  *
  * Text Domain: cine
  */
@@ -15,7 +15,7 @@
 defined( 'ABSPATH' ) || exit;
 
 
-class Movie_Tracker
+class Cine
 {
 	protected static $_instance = null;
 
@@ -26,15 +26,16 @@ class Movie_Tracker
 
 
     // subclasses
-    protected $core         = false;
-    protected $endpoint     = false;
-    protected $admin        = false;
+    public $helper   = null;
+    public $core     = null;
+    public $endpoint = null;
+    public $admin    = null;
 
 
 	public static function _instance(): self
 	{
-		if( null === self::$_instance ) {
-			self::$_instance = new self();
+        if( null === self::$_instance ) {
+            self::$_instance = new self();
         }
 
         return self::$_instance;
@@ -45,7 +46,7 @@ class Movie_Tracker
     {
         $this->define();
         $this->includes();
-        $this->set_sub_classes();
+        $this->add_wp_hooks();
     }
 
 
@@ -59,28 +60,41 @@ class Movie_Tracker
 
     private function includes(): void
     {
-        require_once( self::$plugin_path . '/includes/classes/class-helpers.php' );
-        require_once( self::$plugin_path . '/includes/classes/class-core.php' );
-        require_once( self::$plugin_path . '/includes/classes/class-endpoint.php' );
+        require_once( self::$plugin_path_inc . 'classes/class-helper.php' );
+        require_once( self::$plugin_path_inc . 'classes/class-core.php' );
+        require_once( self::$plugin_path_inc . 'classes/class-endpoint.php' );
 
-        require_once( self::$plugin_path . '/includes/class-fetcher.php' );
-        require_once( self::$plugin_path . '/includes/classes/class-admin.php' );
+        // require_once( self::$plugin_path_inc . 'class-fetcher.php' );
+        require_once( self::$plugin_path_inc . 'classes/class-admin.php' );
 
         // models
-        // require_once( self::$plugin_path . '/includes/class-search-result.php' );
-        // require_once( self::$plugin_path . '/includes/class-raw-movie.php' );
-        // require_once( self::$plugin_path . '/includes/class-display-movie.php' );
+        // require_once( self::$plugin_path . '/class-search-result.php' );
+        // require_once( self::$plugin_path . '/class-raw-movie.php' );
+        // require_once( self::$plugin_path . '/class-display-movie.php' );
     }
 
 
-    private function set_sub_classes(): void
+	private function add_wp_hooks(): void
+	{
+        add_action( 'plugins_loaded', [ $this, 'load_classes' ] );
+	}    
+
+
+    public function load_classes(): void
     {
-        $this->core         = new Movie_Tracker\Core();
-        $this->endpoint     = new Movie_Tracker\Endpoint();
-        $this->admin        = new Movie_Tracker\Admin();
+        $this->helper   = new Cine\Helper();
+        $this->core     = new Cine\Core();
+        $this->endpoint = new Cine\Endpoint();
+        $this->admin    = new Cine\Admin();
     }
 
 }
 
 
-add_action( 'plugins_loaded', [ 'Movie_Tracker', '_instance' ] );
+function Cine() {
+    return Cine::_instance();
+}
+
+
+Cine();
+

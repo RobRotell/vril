@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Movie_Tracker;
+namespace Cine;
 
 
 defined( 'ABSPATH' ) || exit;
@@ -21,11 +21,9 @@ class Core
 
 	private function add_wp_hooks(): void
 	{
-		add_action( 'init', 								[ $this, 'add_post_type' ] );
-        add_action( 'init', 								[ $this, 'add_taxonomy' ] );
-		add_action( 'after_setup_theme', 					[ $this, 'set_image_sizes' ] );
-        add_filter( 'manage_movie_posts_columns',         	[ $this, 'add_columns' ] );
-        add_action( 'manage_movie_posts_custom_column',   	[ $this, 'populate_columns' ], 10, 2 );   		
+		add_action( 'init',                 [ $this, 'add_post_type' ] );
+        add_action( 'init',                 [ $this, 'add_taxonomy' ] );
+		add_action( 'after_setup_theme',    [ $this, 'set_image_sizes' ] );
 	}
 
 
@@ -95,25 +93,6 @@ class Core
                 ],
             ]
         );
-    }
-
-
-    public function add_columns( $columns ): array
-    {
-        unset( $columns['date'] );
-        $columns['to_watch'] = 'To Watch';
-
-        return $columns;
-    }
-
-
-    public function populate_columns( $column, $post_id ): void
-    {
-        if( 'to_watch' === $column ) {
-            if( !empty( get_field( 'to_watch', $post_id ) ) ) {
-                echo '&#x2714;';
-			}
-        }
     }
 
 }
