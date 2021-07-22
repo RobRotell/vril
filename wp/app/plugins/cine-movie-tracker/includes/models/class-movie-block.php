@@ -1,12 +1,13 @@
 <?php
 
 
-namespace Movie_Tracker;
+namespace Cine;
 
 
 use WP_Post;
 use DateTime;
 use NumberFormatter;
+use Vril_Utility;
 
 
 defined( 'ABSPATH' ) || exit;
@@ -44,7 +45,7 @@ class Movie_Block
 	public function grab_simple_details() 
 	{
 		$watch_status = get_field( 'to_watch', $this->id );
-		$this->to_watch = Helper::convert_to_bool( $watch_status );
+		$this->to_watch = Vril_Utility::convert_to_bool( $watch_status );
 
 		$this->director = get_field( 'director', $this->id );	
 
@@ -61,6 +62,8 @@ class Movie_Block
 		if( !empty( $image_id ) ) {
 			$this->backdrop = wp_get_attachment_image_url( $image_id, 'backdrop_small' );
 		}
+
+		return $this;
 	}
 
 
@@ -77,6 +80,8 @@ class Movie_Block
 
 		$poster_id 			= get_post_thumbnail_id( $this->id );
 		$this->poster 		= wp_get_attachment_image_url( $poster_id, 'large' );	
+
+		return $this;
 	}
 
 
@@ -91,16 +96,9 @@ class Movie_Block
 	}
 
 
-	public function prep_movie() 
+	public function package()
 	{
-		$movie = (array)$this;
-		$movie = array_filter( $movie );
-
-		$movie['to_watch'] = $this->to_watch;
-
-		return $movie;
+		return (array)$this;
 	}
-
-
 
 }

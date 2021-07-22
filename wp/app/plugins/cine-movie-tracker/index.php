@@ -26,10 +26,13 @@ class Cine
 
 
     // subclasses
-    public $helper   = null;
-    public $core     = null;
-    public $endpoint = null;
-    public $admin    = null;
+    public $helper      = null;
+    public $core        = null;
+    public $tmdb        = null;
+    public $imagely     = null;
+    public $admin       = null;
+    public $api         = null;
+    public $endpoint    = null;
 
 
 	public static function _instance(): self
@@ -60,17 +63,13 @@ class Cine
 
     private function includes(): void
     {
-        require_once( self::$plugin_path_inc . 'classes/class-helper.php' );
-        require_once( self::$plugin_path_inc . 'classes/class-core.php' );
-        require_once( self::$plugin_path_inc . 'classes/class-endpoint.php' );
-
-        // require_once( self::$plugin_path_inc . 'class-fetcher.php' );
-        require_once( self::$plugin_path_inc . 'classes/class-admin.php' );
-
-        // models
-        // require_once( self::$plugin_path . '/class-search-result.php' );
-        // require_once( self::$plugin_path . '/class-raw-movie.php' );
-        // require_once( self::$plugin_path . '/class-display-movie.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-helper.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-core.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-tmdb.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-admin.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-imagely.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-api.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-endpoint.php' );
     }
 
 
@@ -84,8 +83,11 @@ class Cine
     {
         $this->helper   = new Cine\Helper();
         $this->core     = new Cine\Core();
-        $this->endpoint = new Cine\Endpoint();
+        $this->tmdb     = new Cine\TMDB();
+        $this->imagely  = new Cine\Imagely();
         $this->admin    = new Cine\Admin();
+        $this->api      = new Cine\API();
+        $this->endpoint = new Cine\Endpoint();
     }
 
 }

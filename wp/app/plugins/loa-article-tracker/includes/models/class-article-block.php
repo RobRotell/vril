@@ -1,6 +1,8 @@
 <?php
 
-namespace Loa_Article_Tracker;
+
+namespace Loa;
+
 
 use WP_Post;
 

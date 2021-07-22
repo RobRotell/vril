@@ -1,9 +1,11 @@
 <?php
 
-namespace Loa_Article_Tracker;
+
+namespace Loa;
+
 
 use Exception;
-use WP_Error;
+use Vril_Utility;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
@@ -14,6 +16,8 @@ defined( 'ABSPATH' ) || exit;
 
 class Endpoint
 {
+	const NAMESPACE = 'loa/v3';
+
 	private static $transient_all 	= 'loa_cached_everything';
 	private static $token_prefix 	= 'loa_token';
 	
@@ -23,155 +27,259 @@ class Endpoint
 
 	public function __construct()
 	{
-		// $this->auth_key = get_option( Admin::$option_name );
+		$this->add_wp_hooks();
+	}
 
-		// add_action( 'rest_api_init', 	[ $this, 'register_routes' ] );
-		// add_filter( 'http_origin', 		[ $this, 'extension_origin_fix' ] );
+
+	private function add_wp_hooks()
+	{
+		add_action( 'rest_api_init', 	[ $this, 'register_routes' ] );
+		add_filter( 'http_origin', 		[ $this, 'extension_origin_fix' ] );
 	}
 
 
 	public function register_routes()
 	{
-		$namespace = 'article-repo/v2';
-
+		// grab subset of articles
 		register_rest_route(
-			$namespace,
-			'/get-auth-token',
-			[
-				'methods'	=> WP_REST_Server::EDITABLE,
-				'callback'	=> [ $this, 'route_get_auth_token' ],
-				'permission_callback' => '__return_true',
-				'args'		=> [
-					'auth_key' => [
-						'required'			=> true,
-						'sanitize_callback'	=> [ __NAMESPACE__ . '\Helpers', 'sanitize_auth_key' ],
-						'type'				=> 'string',
-						// 'validate_callback'	=> [ $this, 'validate_auth_key' ]
-					]
-				]
-			]
-		);
-
-		register_rest_route(
-			$namespace,
-			'/check-auth-token',
-			[
-				'methods'	=> WP_REST_Server::READABLE,
-				'callback'	=> [ $this, 'route_check_auth_token' ],
-				'permission_callback' => '__return_true',
-				'args'		=> [
-					'token'	=> [
-						'required'	=> true,
-						'type'		=> 'string',
-					]
-				]
-			]
-		);	
-		
-		register_rest_route(
-			$namespace,
-			'/delete-auth-tokens',
-			[
-				'methods'	=> WP_REST_Server::DELETABLE,
-				'callback'	=> [ $this, 'route_delete_auth_tokens' ],
-				'permission_callback' => '__return_true',
-				'args'		=> [
-					'auth_key' => [
-						'required'			=> true,
-						'sanitize_callback'	=> [ __NAMESPACE__ . '\Helpers', 'sanitize_auth_key' ],
-						'type'				=> 'string',
-					]
-				]
-			]
-		);		
-		
-		register_rest_route(
-			$namespace,
-			'/get-everything',
-			[
-				'methods'	=> WP_REST_Server::READABLE,
-				'callback'	=> [ $this, 'route_get_everything' ],
-				'permission_callback' => '__return_true',
-				'args'		=> [
-					'token'	=> [
-						'required'			=> true,
-						'type'				=> 'string',
-						'validate_callback'	=> [ $this, 'validate_token' ]
-					]
-				]
-			]
-		);
-		
-		register_rest_route(
-			$namespace,
-			'/get-tags',
-			[
-				'methods'	=> WP_REST_Server::READABLE,
-				'callback'	=> [ $this, 'route_get_tags' ],
-				'permission_callback' => '__return_true',
-				'args'		=> [
-					'token'	=> [
-						'required'			=> true,
-						'type'				=> 'string',
-						'validate_callback'	=> [ $this, 'validate_token' ]
-					]
-				]
-			]
-		);
-		
-		register_rest_route(
-			$namespace,
+			self::NAMESPACE,
 			'/get-articles',
 			[
-				'methods'	=> WP_REST_Server::READABLE,
-				'callback'	=> [ $this, 'route_get_articles' ],
-				'permission_callback' => '__return_true',
-				'args'		=> [
-					'token'	=> [
-						'required'			=> true,
-						'type'				=> 'string',
-						'validate_callback'	=> [ $this, 'validate_token' ]
-					]
-				]
-			]
-		);
-		
-		register_rest_route(
-			$namespace,
-			'/(add|update)-article',
-			[
-				'callback'				=> [ $this, 'route_add_article' ],
-				'methods'				=> WP_REST_Server::EDITABLE,
+				'methods'				=> WP_REST_Server::READABLE,
+				'callback'				=> [ $this, 'get_articles' ],
 				'permission_callback'	=> '__return_true',
-				'args'					=> [
-					'token'	=> [
-						'required'			=> true,
+				'args'		=> [
+					'page'	=> [
+						'default'			=> 1,
 						'type'				=> 'string',
-						'validate_callback'	=> [ $this, 'validate_token' ]
+						'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_int' ],
 					],
-					'url'	=> [
-						'required'			=> true,
-						'sanitize_callback'	=> [ __NAMESPACE__ . '\Helpers', 'sanitize_url' ],
+					'count'	=> [
+						'default'			=> 50,
 						'type'				=> 'string',
+						'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_int' ],
 					],
-					'tags'	=> [
+					'category'	=> [
+						'default'			=> 0,
+						'type'				=> 'string',
+						'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_int' ], // @todo — could be array
+					],
+					'keyword' => [
 						'default'			=> '',
-						'required' 			=> false,
-						'type'				=> [ 'string', 'array' ],
+						'type'				=> 'string',
+						'sanitize_callback'	=> [ 'Vril_Utility', 'sanitize_var' ],
 					],
-					'read'	=> [
+					'read' => [
 						'default'			=> false,
-						'required'			=> false,
-						'type'				=> 'boolean'
+						'type'				=> 'string',
+						'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
 					],
 					'favorite' => [
 						'default'			=> false,
-						'required'			=> false,
-						'type'				=> 'boolean'
+						'type'				=> 'string',
+						'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
+					],					
+					'no_cache' => [
+						'default'			=> false,
+						'type'				=> 'string',
+						'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
 					]
 				]
 			]
-		);							
+		);
+
+
+
+		// $helper = Loa()->helper;
+
+		// register_rest_route(
+		// 	$namespace,
+		// 	'/get-auth-token',
+		// 	[
+		// 		'methods'	=> WP_REST_Server::EDITABLE,
+		// 		'callback'	=> [ $this, 'route_get_auth_token' ],
+		// 		'permission_callback' => '__return_true',
+		// 		'args'		=> [
+		// 			'auth_key' => [
+		// 				'required'			=> true,
+		// 				'sanitize_callback'	=> [ __NAMESPACE__ . '\Helpers', 'sanitize_auth_key' ],
+		// 				'type'				=> 'string',
+		// 				// 'validate_callback'	=> [ $this, 'validate_auth_key' ]
+		// 			]
+		// 		]
+		// 	]
+		// );
+
+		// register_rest_route(
+		// 	$namespace,
+		// 	'/check-auth-token',
+		// 	[
+		// 		'methods'	=> WP_REST_Server::READABLE,
+		// 		'callback'	=> [ $this, 'route_check_auth_token' ],
+		// 		'permission_callback' => '__return_true',
+		// 		'args'		=> [
+		// 			'token'	=> [
+		// 				'required'	=> true,
+		// 				'type'		=> 'string',
+		// 			]
+		// 		]
+		// 	]
+		// );	
+		
+		// register_rest_route(
+		// 	$namespace,
+		// 	'/delete-auth-tokens',
+		// 	[
+		// 		'methods'	=> WP_REST_Server::DELETABLE,
+		// 		'callback'	=> [ $this, 'route_delete_auth_tokens' ],
+		// 		'permission_callback' => '__return_true',
+		// 		'args'		=> [
+		// 			'auth_key' => [
+		// 				'required'			=> true,
+		// 				'sanitize_callback'	=> [ __NAMESPACE__ . '\Helpers', 'sanitize_auth_key' ],
+		// 				'type'				=> 'string',
+		// 			]
+		// 		]
+		// 	]
+		// );		
+		
+		// register_rest_route(
+		// 	$namespace,
+		// 	'/get-everything',
+		// 	[
+		// 		'methods'	=> WP_REST_Server::READABLE,
+		// 		'callback'	=> [ $this, 'route_get_everything' ],
+		// 		'permission_callback' => '__return_true',
+		// 		'args'		=> [
+		// 			'token'	=> [
+		// 				'required'			=> true,
+		// 				'type'				=> 'string',
+		// 				'validate_callback'	=> [ $this, 'validate_token' ]
+		// 			]
+		// 		]
+		// 	]
+		// );
+		
+		// register_rest_route(
+		// 	$namespace,
+		// 	'/get-tags',
+		// 	[
+		// 		'methods'	=> WP_REST_Server::READABLE,
+		// 		'callback'	=> [ $this, 'route_get_tags' ],
+		// 		'permission_callback' => '__return_true',
+		// 		'args'		=> [
+		// 			'token'	=> [
+		// 				'required'			=> true,
+		// 				'type'				=> 'string',
+		// 				'validate_callback'	=> [ $this, 'validate_token' ]
+		// 			]
+		// 		]
+		// 	]
+		// );
+		
+		// register_rest_route(
+		// 	$namespace,
+		// 	'/get-articles',
+		// 	[
+		// 		'methods'	=> WP_REST_Server::READABLE,
+		// 		'callback'	=> [ $this, 'route_get_articles' ],
+		// 		'permission_callback' => '__return_true',
+		// 		'args'		=> [
+		// 			'token'	=> [
+		// 				'required'			=> true,
+		// 				'type'				=> 'string',
+		// 				'validate_callback'	=> [ $this, 'validate_token' ]
+		// 			]
+		// 		]
+		// 	]
+		// );
+		
+		// register_rest_route(
+		// 	$namespace,
+		// 	'/(add|update)-article',
+		// 	[
+		// 		'callback'				=> [ $this, 'route_add_article' ],
+		// 		'methods'				=> WP_REST_Server::EDITABLE,
+		// 		'permission_callback'	=> '__return_true',
+		// 		'args'					=> [
+		// 			'token'	=> [
+		// 				'required'			=> true,
+		// 				'type'				=> 'string',
+		// 				'validate_callback'	=> [ $this, 'validate_token' ]
+		// 			],
+		// 			'url'	=> [
+		// 				'required'			=> true,
+		// 				'sanitize_callback'	=> [ __NAMESPACE__ . '\Helpers', 'sanitize_url' ],
+		// 				'type'				=> 'string',
+		// 			],
+		// 			'tags'	=> [
+		// 				'default'			=> '',
+		// 				'required' 			=> false,
+		// 				'type'				=> [ 'string', 'array' ],
+		// 			],
+		// 			'read'	=> [
+		// 				'default'			=> false,
+		// 				'required'			=> false,
+		// 				'type'				=> 'boolean'
+		// 			],
+		// 			'favorite' => [
+		// 				'default'			=> false,
+		// 				'required'			=> false,
+		// 				'type'				=> 'boolean'
+		// 			]
+		// 		]
+		// 	]
+		// );							
+	}
+
+
+	/**
+	 * Handle request for getting articles
+	 *
+	 * @param	WP_Rest_Request		$request	API request
+	 * @return 	WP_REST_Response 				API response
+	 */
+	public function get_articles( WP_Rest_Request $request ): WP_REST_Response
+	{
+		Loa()->helper::load_model( 'Article Block' );
+
+		$page 			= $request->get_param( 'page' );
+		$count 			= $request->get_param( 'count' );
+		$category 		= $request->get_param( 'category' );
+		$keyword 		= $request->get_param( 'keyword' );
+		$is_read 		= $request->get_param( 'read' );
+		$is_favorite 	= $request->get_param( 'favorite' );
+		$no_cache 		= $request->get_param( 'no_cache' );
+
+		$fetch_new 		= false;
+		$last_updated 	= Admin::get_last_updated();
+
+		$data = [
+			'last_updated' => $last_updated
+		];		
+
+		if( $no_cache ) {
+			$fetch_new = true;
+		} else {
+			$transient_key = compact( 'page', 'count', 'category', 'keyword', 'is_read', 'is_favorite' );
+			$transient_key = http_build_query( $transient_key );
+			$transient_key = sprintf( 'loa_fetch_%s', md5( $transient_key ) );
+	
+			$cached_data = get_transient( $transient_key );
+			if( !isset( $cached_data['last_updated'] ) || $last_updated !== $cached_data['last_updated'] ) {
+				$fetch_new = true;
+			} elseif( !isset( $cached_data['movies'] ) || empty( $cached_data['movies'] ) ) {
+				$fetch_new = true;
+			} else {
+				$data = $cached_data;
+			}
+		}
+
+		$data = [];
+
+		$response = new WP_REST_Response( $data );
+
+		return rest_ensure_response( $response );
 	}
 
 

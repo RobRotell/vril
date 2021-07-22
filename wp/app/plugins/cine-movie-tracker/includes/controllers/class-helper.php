@@ -13,41 +13,27 @@ defined( 'ABSPATH' ) || exit;
 class Helper
 {
 	/**
-	 * Simple, recursive sanitizing function
+	 * Singular hashing system for codes
 	 *
-	 * @param	mixed	$var 	Object/array/string sanitize
-	 * @return	mixed 			Sanitized var
+	 * @param	string	$code 	Code to hash
+	 * @param 	bool 	$salted Wrap code to salt?
+	 * @return 	string 			Hashed code
 	 */
-	public static function sanitize_var( $var ) 
+	public static function hash( string $code, bool $salted = true ): string
 	{
-		if( is_object( $var ) || is_array( $var ) ) {
-			foreach( $var as $key => &$value ) {
-				$value = self::sanitize_var( $value );
-			}
-		} else {
-			$var = trim( sanitize_text_field( $var ) );
+		if( $salted ) {
+			$code = sprintf( 
+				'%s%s%s', 
+				wp_salt( 'secure_auth' ), 
+				$code, 
+				wp_salt(), 
+			);
 		}
 
-		return $var;
+		return hash( VRIL_HASH_METHOD, $code );
 	}
 	
 	
-	/**
-	 * Simple integer-converting function
-	 *
-	 * @param	mixed	$var 	Variable to convert to integer
-	 * @return	integer 		Integer
-	 */	
-	public static function convert_to_int( $var ): int 
-	{
-		if( is_array( $var ) && 1 === count( $var ) ) {
-			return self::convert_to_int( $var );
-		}
-
-		return (int)$var;
-	}	
-
-
 	/**
 	 * Retrieve genre term by name (and create term if term doesn't exist)
 	 *
@@ -80,21 +66,6 @@ class Helper
 		}
 
 		return ( $id_only ) ? $term->term_id : $term;
-	}
-
-
-	/**
-	 * Convert value to boolean
-	 *
-	 * @param	string 	$var 	Variable to convert to boolean
-	 * @return 	boolean 		Boolean
-	 */
-	public static function convert_to_bool( $var ): bool
-	{
-		return in_array(
-			$var,
-			[ 1, '1', true, 'true' ]
-		);
 	}
 
 

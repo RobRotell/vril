@@ -30,8 +30,8 @@ class Core
 	public function set_image_sizes(): void
 	{
 		add_theme_support( 'post-thumbnails' );
-		add_image_size( 'backdrop_small', 640, 300, true );
-		add_image_size( 'backdrop', 1100, 300, true );
+		// add_image_size( 'backdrop_small', 640, 300, true );
+		// add_image_size( 'backdrop', 1100, 300, true );
 	}
 
 

@@ -4,12 +4,16 @@
 namespace Loa;
 
 
+use WP_Post;
+
+
 defined( 'ABSPATH' ) || exit;
 
 
 class Admin
 {
-	const OPTION_AUTH = 'loa_auth';
+	const OPTION_AUTH 	= 'loa_auth';
+	const OPTION_UPDATE = 'loa_last_updated';
 
 
 	public function __construct()
@@ -22,10 +26,11 @@ class Admin
 	{
 		$post_type = Loa()->core::POST_TYPE;
 
-		add_action( 'admin_menu', [ $this, 'add_settings_page' ] );
+		add_action( 'admin_menu', 										[ $this, 'add_settings_page' ] );
+        add_filter( 'manage_' . $post_type . '_posts_columns', 			[ $this, 'add_columns' ] );
+        add_action( 'manage_' . $post_type . '_posts_custom_column', 	[ $this, 'populate_columns' ], 10, 2 );
+		add_action( 'save_post_'. $post_type, 							[ $this, 'update_last_updated_value' ] );
 
-        add_filter( 'manage_' . $post_type . '_posts_columns', [ $this, 'add_columns' ] );
-        add_action( 'manage_' . $post_type . '_posts_custom_column', [ $this, 'populate_columns' ], 10, 2 );		
 	}
 
 
@@ -85,11 +90,28 @@ class Admin
 										id="loa_auth" 
 										class="regular-text" 
 										name="loa_auth" 
-										type="password" 
-										value="****************" 
+										type="text" 
+										value="••••••••••" 
 									/>
 								</td>
 							</tr>
+
+							<?php if( !empty( $updated = self::get_last_updated() ) ): ?>
+								<tr>
+									<th><label for="loa_update">Last Updated</label></th>
+									<td>
+										<input 
+											id="loa_update" 
+											class="regular-text" 
+											name="loa_update" 
+											type="text" 
+											value="<?php echo esc_attr( date( 'M d, Y', $updated ) ); ?>" 
+											disabled readonly 
+										/>
+									</td>
+								</tr>
+							<?php endif; ?>
+
 						</tbody>
 					</table>
 					<?php submit_button( 'Update' ); ?>
@@ -97,27 +119,6 @@ class Admin
 			</div>
 		<?php
 	}	
-
-
-
-	// public function add_columns( array $columns, int $post_id ): array
-	// {
-    //     // target only articles
-    //     if( 'article' !==get_post_type( $post_id ) !== 'article' ) {
-
-	// 	}
-    //         return;
-
-    //     // check if article has added date
-    //     if( empty( get_field( 'article_date_added', $post_id ) ) ) {
-
-    //         // save as now
-    //         $now = new DateTime();
-    //         $now = $now->format( 'Y-m-d' );
-
-    //         update_field( 'article_date_added', $now, $post_id );
-    //     }
-    // }
 
 
     public function add_columns( array $columns ): array
@@ -166,6 +167,18 @@ class Admin
 				}
 				break;
 		}				
+	}
+
+
+	public static function get_last_updated(): string
+	{
+		return get_option( self::OPTION_UPDATE, '' );
+	}
+
+	
+	public static function update_last_updated_value(): void
+	{
+		update_option( self::OPTION_UPDATE, time() );
 	}
 
 

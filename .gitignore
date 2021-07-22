@@ -19,3 +19,7 @@ wp/app/plugins/*
 
 wp/app/themes/*
 !wp/app/themes/pale
+
+vendor/
+*.log
+error_log

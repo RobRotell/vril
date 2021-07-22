@@ -3,6 +3,10 @@
 namespace Loa;
 
 
+use DOMDocument;
+use DOMXPath;
+
+
 defined( 'ABSPATH' ) || exit;
 
 
@@ -22,13 +26,92 @@ class Helper
 				'%s%s%s', 
 				wp_salt(), 
 				$code, 
-				wp_salt( 'secure' ) 
+				wp_salt( 'secure_auth' ) 
 			);
 		}
 
 		return hash( VRIL_HASH_METHOD, $code );
 	}
 
+
+	/**
+	 * Include model file
+	 *
+	 * @param	string	$model	Model name
+	 * @return 	void
+	 */
+	public static function load_model( string $model ): void
+	{
+		$file = sprintf( 
+			'%smodels/class-%s.php', 
+			Loa()::$plugin_path_inc, 
+			sanitize_title( $model ) 
+		);
+
+		require_once( $file );
+	}
+
+
+	/**
+	 * Fetch article meta
+	 * 
+	 * Right now, this includes title and description, but could include more items in future.
+	 *
+	 * @param	string 	$url 	URL
+	 * @return	array 			Metadata
+	 */
+	public static function fetch_meta_for_url( string $url ): array
+	{
+		$meta = [
+			'title'			=> '',
+			'description'	=> '',
+		];
+
+		$url = esc_url( $url );
+		if( empty( $url ) ) {
+			return $meta;
+		}
+
+		$request = wp_safe_remote_get( $url );
+		if( 200 !== wp_remote_retrieve_response_code( $request ) ) {
+			return $meta;
+		}
+		$html = wp_remote_retrieve_body( $request );
+
+		$doc = new DOMDocument( $html );
+		$doc->loadHTML( $html );
+
+		$xpath = new DOMXPath( $doc );
+
+		$nodes = $xpath->query( '//head/title' );
+		foreach( $nodes as $node ) {
+			$text = trim( $node->nodeValue );
+			$text = sanitize_text_field( $text );
+
+			if( !empty( $text ) ) {
+				$meta['title'] = $text;
+				break;
+			}
+		}
+
+		$nodes = $xpath->query( '//head/meta' );
+		foreach( $nodes as $node ) {
+			if( 'description' === $node->getAttribute('name') ) {
+				$text = trim( $node->getAttribute('content') );
+				$text = sanitize_text_field( $text );
+
+				if( !empty( $text ) ) {
+					$meta['description'] = $text;
+					break;
+				}
+			}
+		}
+
+		unset( $doc );
+		unset( $xpath );
+
+		return $meta;
+	}
 
 
 	// /**
