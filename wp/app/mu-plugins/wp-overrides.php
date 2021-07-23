@@ -89,6 +89,16 @@ add_filter( 'update_footer', '__return_false', 9999 );
 add_filter( 'login_headertext', '__return_false' );
 
 
+// change URL for login logo
+add_filter( 'login_headerurl', 'get_home_url' );
+
+
+// preload admin logo
+add_action( 'login_head', function() {
+	printf( '<link rel="preload" as="image" href="%s" />', wp_get_attachment_url( 3012 ) );
+}, -99 );
+
+
 // change logo on login page
 add_action( 'login_head', function() {
 	$logo_url = wp_get_attachment_url( 3012 );
@@ -116,8 +126,16 @@ add_action( 'login_head', function() {
 		.login form .input, 
 		.login input[type="password"], 
 		.login input[type="text"] {
+			font-size: 18px;
+			padding: 4px 8px;
 			border: none;
 			background-color: #f4f4f4;
+		}
+
+		.login form .input:focus {
+			box-shadow: none;
+			outline: none;
+			border: 1px solid #663b94;
 		}
 
 		#wp-submit {
@@ -133,6 +151,9 @@ add_action( 'login_head', function() {
 
 		.login h1 a {
 			background-image: url( '<?php echo $logo_url; ?>' );
+			background-size: contain;
+			width: 125px;
+			height: 125px;
 		}
 	</style>
 

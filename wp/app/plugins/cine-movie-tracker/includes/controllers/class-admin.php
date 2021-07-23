@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Cine;
+namespace Cine\Controller;
 
 
 use WP_Post;
@@ -12,9 +12,11 @@ defined( 'ABSPATH' ) || exit;
 
 class Admin
 {
-	const OPTION_AUTH 	= 'cine_auth';
-	const OPTION_APIKEY = 'cine_apikey';
-	const OPTION_UPDATE = 'cine_last_updated';
+	const OPTION_AUTH 			= 'cine_auth';
+	const OPTION_TMDB_APIKEY	= 'cine_tmdb_apikey';
+	const OPTION_TINIFY_APIKEY	= 'cine_tinify_apikey';
+
+	const OPTION_UPDATE			= 'cine_last_updated';
 	
 
 	public function __construct()
@@ -53,7 +55,7 @@ class Admin
 	{
 		$admin_action = 'cine_update_settings';
 
-		if( isset( $_POST['cine_auth'] ) && isset( $_POST['cine_apikey'] ) ) {
+		if( isset( $_POST['cine_auth'] ) && isset( $_POST['cine_tmdb_apikey'] ) && isset( $_POST['cine_tinify_apikey'] ) ) {
 			check_admin_referer( $admin_action );
 
 			$auth = sanitize_text_field( $_POST['cine_auth'] );
@@ -61,9 +63,14 @@ class Admin
 				$success_auth = self::set_auth( $auth );
 			}
 
-			$apikey = sanitize_text_field( $_POST['cine_apikey'] );
-			if( $apikey !== self::get_apikey() ) {
-				$success_apikey = self::set_apikey( $apikey );
+			$tmdb_apikey = sanitize_text_field( $_POST['cine_tmdb_apikey'] );
+			if( $tmdb_apikey !== self::get_tmdb_apikey() ) {
+				$success_tmdb_apikey = self::set_tmdb_apikey( $tmdb_apikey );
+			}
+
+			$tinify_apikey = sanitize_text_field( $_POST['cine_tinify_apikey'] );
+			if( $tinify_apikey !== self::get_tinify_apikey() ) {
+				$success_tinify_apikey = self::set_tinify_apikey( $tinify_apikey );
 			}
 
 			?>
@@ -82,19 +89,33 @@ class Admin
 				<?php endif; ?>
 			<?php endif; ?>
 
-			<?php if( isset( $success_apikey ) ): ?>
-				<?php if( $success_apikey ): ?>
+			<?php if( isset( $success_tmdb_apikey ) ): ?>
+				<?php if( $success_tmdb_apikey ): ?>
 					<div class="notice notice-success settings-error is-dismissible"> 
-						<p><strong>API key updated!</strong></p>
+						<p><strong>TMDB API key updated!</strong></p>
 						<button type="button" class="notice-dismiss"></button>
 					</div>
 				<?php else: ?>
 					<div class="notice notice-error settings-error is-dismissible"> 
-						<p><strong>Failed to save API key.</strong></p>
+						<p><strong>Failed to save TMDB API key.</strong></p>
 						<button type="button" class="notice-dismiss"></button>
 					</div>
 				<?php endif; ?>
-			<?php endif; ?>			
+			<?php endif; ?>	
+			
+			<?php if( isset( $success_tinify_apikey ) ): ?>
+				<?php if( $success_tinify_apikey ): ?>
+					<div class="notice notice-success settings-error is-dismissible"> 
+						<p><strong>Tinify API key updated!</strong></p>
+						<button type="button" class="notice-dismiss"></button>
+					</div>
+				<?php else: ?>
+					<div class="notice notice-error settings-error is-dismissible"> 
+						<p><strong>Failed to save Tinify API key.</strong></p>
+						<button type="button" class="notice-dismiss"></button>
+					</div>
+				<?php endif; ?>
+			<?php endif; ?>				
 			
 			<?php
 		}
@@ -114,8 +135,8 @@ class Admin
 										id="cine_auth" 
 										class="regular-text" 
 										name="cine_auth" 
-										type="text" 
-										value="••••••••••"
+										type="password" 
+										placeholder="••••••••••"
 									/>
 								</td>
 							</tr>
@@ -125,12 +146,25 @@ class Admin
 									<input 
 										id="cine_apikey" 
 										class="regular-text" 
-										name="cine_apikey" 
-										type="text" 
-										value="<?php echo esc_attr( self::get_apikey() ); ?>" 
+										name="cine_tmdb_apikey" 
+										type="password" 
+										placeholder="••••••••••" 
 									/>
 								</td>
 							</tr>
+
+							<tr>
+								<th><label for="cine_apikey">Tinify API Key</label></th>
+								<td>
+									<input 
+										id="cine_apikey" 
+										class="regular-text" 
+										name="cine_tinify_apikey" 
+										type="password" 
+										placeholder="••••••••••" 
+									/>
+								</td>
+							</tr>							
 
 							<?php if( !empty( $updated = self::get_last_updated() ) ): ?>
 								<tr>
@@ -274,10 +308,21 @@ class Admin
 	 *
 	 * @return 	string 	API key
 	 */	
-	public static function get_apikey(): string
+	public static function get_tmdb_apikey(): string
 	{
-		return get_option( self::OPTION_APIKEY, '' );
+		return get_option( self::OPTION_TMDB_APIKEY, '' );
 	}
+
+	
+	/**
+	 * Get API key for TMDB
+	 *
+	 * @return 	string 	API key
+	 */	
+	public static function get_tinify_apikey(): string
+	{
+		return get_option( self::OPTION_TINIFY_APIKEY, '' );
+	}	
 
 
 	/**
@@ -286,7 +331,7 @@ class Admin
 	 * @param	string	$auth 	New auth code
 	 * @return 	bool 			True, if new auth code was saved
 	 */	
-	public static function set_auth( string $auth ): bool
+	private static function set_auth( string $auth ): bool
 	{
 		if( current_user_can( 'manage_options' ) ) {
 			$auth = Cine()->helper::hash( $auth );
@@ -304,13 +349,29 @@ class Admin
 	 * @param	string	$apikey 	New API key 	
 	 * @return 	bool 				True, if new API key was saved
 	 */	
-	public static function set_apikey( string $apikey ): bool
+	private static function set_tmdb_apikey( string $apikey ): bool
 	{
 		if( current_user_can( 'manage_options' ) ) {
-			return update_option( self::OPTION_APIKEY, $apikey );
+			return update_option( self::OPTION_TMDB_APIKEY, $apikey );
 		}
 		
 		return false;
-	}		
+	}	
+
+
+	/**
+	 * Set new API key
+	 *
+	 * @param	string	$apikey 	New API key 	
+	 * @return 	bool 				True, if new API key was saved
+	 */	
+	private static function set_tinify_apikey( string $apikey ): bool
+	{
+		if( current_user_can( 'manage_options' ) ) {
+			return update_option( self::OPTION_TINIFY_APIKEY, $apikey );
+		}
+		
+		return false;
+	}			
 
 }

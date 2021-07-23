@@ -29,7 +29,7 @@ class Cine
     public $helper      = null;
     public $core        = null;
     public $tmdb        = null;
-    public $imagely     = null;
+    public $tinify     = null;
     public $admin       = null;
     public $api         = null;
     public $endpoint    = null;
@@ -63,12 +63,21 @@ class Cine
 
     private function includes(): void
     {
+        // models
+        require_once( self::$plugin_path_inc . 'models/class-movie-block.php' );
+        require_once( self::$plugin_path_inc . 'models/class-search-result.php' );
+        require_once( self::$plugin_path_inc . 'models/class-new-movie.php' );
+        require_once( self::$plugin_path_inc . 'models/class-api-response.php' );
+
+        // external APIs
+        require_once( self::$plugin_path_inc . 'apis/class-tinify.php' );
+        require_once( self::$plugin_path_inc . 'apis/class-tmdb.php' );
+        
+        // controllers
         require_once( self::$plugin_path_inc . 'controllers/class-helper.php' );
         require_once( self::$plugin_path_inc . 'controllers/class-core.php' );
-        require_once( self::$plugin_path_inc . 'controllers/class-tmdb.php' );
-        require_once( self::$plugin_path_inc . 'controllers/class-admin.php' );
-        require_once( self::$plugin_path_inc . 'controllers/class-imagely.php' );
         require_once( self::$plugin_path_inc . 'controllers/class-api.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-admin.php' );
         require_once( self::$plugin_path_inc . 'controllers/class-endpoint.php' );
     }
 
@@ -81,13 +90,14 @@ class Cine
 
     public function load_classes(): void
     {
-        $this->helper   = new Cine\Helper();
-        $this->core     = new Cine\Core();
-        $this->tmdb     = new Cine\TMDB();
-        $this->imagely  = new Cine\Imagely();
-        $this->admin    = new Cine\Admin();
-        $this->api      = new Cine\API();
-        $this->endpoint = new Cine\Endpoint();
+        $this->tmdb     = new Cine\Api\TMDB();
+        $this->tinify   = new Cine\Api\Tinify();
+        
+        $this->helper   = new Cine\Controller\Helper();
+        $this->core     = new Cine\Controller\Core();
+        $this->admin    = new Cine\Controller\Admin();
+        $this->api      = new Cine\Controller\API();
+        $this->endpoint = new Cine\Controller\Endpoint();
     }
 
 }

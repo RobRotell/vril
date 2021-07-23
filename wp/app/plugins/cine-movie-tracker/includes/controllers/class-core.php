@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Cine;
+namespace Cine\Controller;
 
 
 defined( 'ABSPATH' ) || exit;

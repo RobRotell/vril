@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Cine;
+namespace Cine\Api;
 
 
 defined( 'ABSPATH' ) || exit;
@@ -29,7 +29,7 @@ class TMDB
 		$results	= [];
 		$params 	= [];
 
-		$params['api_key'] = Cine()->admin::get_apikey();
+		$params['api_key'] = Cine()->admin::get_tmdb_apikey();
 
 		// check for query param
 		if( !empty( $query ) ) {

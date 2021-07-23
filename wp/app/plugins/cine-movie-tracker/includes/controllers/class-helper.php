@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Cine;
+namespace Cine\Controller;
 
 
 use Error;
@@ -107,6 +107,28 @@ class Helper
 		$title = preg_replace( '/[^A-Za-z0-9]/', '', $title );
 
 		return $title;
+	}
+
+
+	/**
+	 * Load image/file dependencies
+	 *
+	 * @return 	true
+	 */
+	public static function load_image_file_system(): bool
+	{
+		if( !did_action( 'cine_loaded_image_file_system' ) ) {
+			require_once( ABSPATH . 'wp-admin/includes/image.php' );
+			require_once( ABSPATH . 'wp-admin/includes/file.php' );
+			require_once( ABSPATH . 'wp-admin/includes/media.php' );
+			require_once( ABSPATH . 'wp-admin/includes/file.php' );
+
+			WP_Filesystem();
+
+			do_action( 'cine_loaded_image_file_system' );
+		}
+
+		return true;
 	}
 	
 

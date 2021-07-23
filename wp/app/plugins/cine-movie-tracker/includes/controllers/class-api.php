@@ -1,13 +1,19 @@
 <?php
 
 
-namespace Cine;
+namespace Cine\Controller;
 
 
 use Exception;
 use Throwable;
 use WP_REST_Request;
 use WP_REST_Response;
+
+
+use Cine\Model\Api_Response as Api_Response;
+use Cine\Model\New_Movie as New_Movie;
+use Cine\Model\Search_Result as Search_Result;
+use Cine\Model\Movie_Block as Movie_Block;
 
 
 defined( 'ABSPATH' ) || exit;
@@ -19,12 +25,10 @@ class API
 	 * Create standardized response object
 	 *
 	 * @param	string			$keys 	Data keys
-	 * @return 	Api_Response 			Response object
+	 * @return	Api_Response 			Custom API response obj
 	 */
 	private static function create_response_obj( string ...$keys ): Api_Response
 	{
-		Cine()->helper::load_model( 'API Response' );
-
 		$response = new Api_Response();
 
 		foreach( $keys as $key ) {
@@ -39,7 +43,7 @@ class API
 	 * Get movies from database based on request parameters
 	 *
 	 * @param 	WP_Rest_Request 	$request 	API request
-	 * @return 	WP_REST_Response 				API response
+	 * @return	WP_REST_Response 				REST API response
 	 */
 	public function get_movies( WP_Rest_Request $request ): WP_REST_Response
 	{
@@ -55,8 +59,6 @@ class API
 
 		try {
 			// object for displaying movie details
-			Cine()->helper::load_model( 'Movie Block' );
-
 			$meta 	= [];
 			$movies = [];
 
@@ -151,7 +153,7 @@ class API
 	 * A greater last updated time denotes that content has changed since last request.
 	 *
 	 * @param 	WP_Rest_Request 	$request 	API request
-	 * @return	WP_REST_Response 				API response
+	 * @return	WP_REST_Response 				REST API response
 	 */
 	public function get_last_updated_time( WP_Rest_Request $request ): WP_REST_Response
 	{
@@ -168,7 +170,7 @@ class API
 	 * Get movie by post ID
 	 *
 	 * @param 	WP_Rest_Request 	$request 	API request
-	 * @return 	WP_REST_Response 				API response
+	 * @return	WP_REST_Response 				REST API response
 	 */
 	public function get_movie_by_id( WP_Rest_Request $request ): WP_REST_Response
 	{
@@ -178,23 +180,35 @@ class API
 		$res = self::create_response_obj( 'movie' );
 
 		try {
-			// object for displaying movie details
-			Cine()->helper::load_model( 'Movie Block' );
 
-			$post = get_post( $id );
-			if( empty( $post ) ) {
-				$res->set_error( 
-					sprintf( 'No movie matched ID: "%s"', $id ),
-					404
-				);
-			} else {
-				$movie = new Movie_Block( $post );
-				$movie
-					->grab_all_details()
-					->package();
+			$transient_key = compact( 'id' );
+			$transient_key = http_build_query( $transient_key );
+			$transient_key = sprintf( 'cine_fetch_movie_by_id_%s', md5( $transient_key ) );
 
-				$res->add_data( $movie, 'movie' );
+			$movie = get_transient( $transient_key );
+
+			if( empty( $movie ) ) {
+
+				// object for displaying movie details
+
+				$post = get_post( $id );
+				if( empty( $post ) ) {
+					$res->set_error( 
+						sprintf( 'No movie matched ID: "%s"', $id ),
+						404
+					);
+				} else {
+					$movie = new Movie_Block( $post );
+					$movie
+						->grab_all_details()
+						->package();
+
+						
+					set_transient( $transient_key, $movie );
+				}
 			}
+				
+			$res->add_data( $movie, 'movie' );
 
 		} catch( Throwable $e ) {
 			$res->set_error( $e->getMessage() );
@@ -208,9 +222,9 @@ class API
 	 * Search TMDB for movie based on title keyword
 	 *
 	 * @param 	WP_Rest_Request 	$request 	API request
-	 * @return 	WP_REST_Response 				API response
+	 * @return	WP_REST_Response 				REST API response
 	 */
-	public function search_by_title( WP_Rest_Request $request )
+	public function search_by_title( WP_Rest_Request $request ): WP_REST_Response
 	{
 		$title = $request->get_param( 'title' );
 		$limit = $request->get_param( 'limit' );
@@ -220,8 +234,6 @@ class API
 		
 		try {
 			// object for displaying search results
-			Cine()->helper::load_model( 'Search Result' );
-
 			// query TheMovieDatabase for movies that match title
 			$results = Cine()->tmdb::find_movie_by_title( $title, $limit );
 
@@ -258,9 +270,9 @@ class API
 	 * Add movie to WP DB based on TMDB movie ID
 	 *
 	 * @param 	WP_Rest_Request 	$request 	API request
-	 * @return 	WP_REST_Response 				API response
+	 * @return	WP_REST_Response 				REST API response
 	 */	
-	public function add_movie_by_id( WP_Rest_Request $request )
+	public function add_movie_by_id( WP_Rest_Request $request ): WP_REST_Response
 	{
 		$tmdb_id	= $request->get_param( 'id' );
 		$status 	= $request->get_param( 'to_watch' );
@@ -270,9 +282,6 @@ class API
 
 		try {
 			// object for displaying movie details
-			Cine()->helper::load_model( 'New Movie' );
-			Cine()->helper::load_model( 'Movie Block' );			
-
 			// query TMDB for movie details
 			$details = Cine()->tmdb::find_movie_details( $tmdb_id );
 
@@ -307,9 +316,9 @@ class API
 	 * Set "to watch" movie as "watched"
 	 *
 	 * @param 	WP_Rest_Request 	$request 	API request
-	 * @return 	WP_REST_Response 				API response
+	 * @return	WP_REST_Response 				REST API response
 	 */	
-	public function set_movie_as_watched( WP_Rest_Request $request )
+	public function set_movie_as_watched( WP_Rest_Request $request ): WP_REST_Response
 	{
 		$movie_id	= $request->get_param( 'id' );
 		// $watched	= $request->get_param( 'watched' );
@@ -349,8 +358,6 @@ class API
 				}
 			}
 
-			Cine()->helper::load_model( 'Movie Block' );
-
 			$movie = new Movie_Block( $post );
 			$movie
 				->grab_all_details()
@@ -370,9 +377,9 @@ class API
 	 * Delete movie from WP DB
 	 *
 	 * @param 	WP_Rest_Request 	$request 	API request
-	 * @return 	WP_REST_Response 				API response
+	 * @return	WP_REST_Response 				REST API response
 	 */	
-	public function delete_movie( WP_Rest_Request $request )
+	public function delete_movie( WP_Rest_Request $request ): WP_REST_Response
 	{
 		$movie_id = $request->get_param( 'id' );
 

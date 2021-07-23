@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Cine;
+namespace Cine\Model;
 
 
 use Vril_Utility;
@@ -148,11 +148,9 @@ class New_Movie
 	 */
 	private function grab_image( string $path, string $case = 'poster' )
 	{
-		if( !function_exists( 'media_handle_upload' ) ) {
-            require_once( ABSPATH . 'wp-admin/includes/image.php' );
-            require_once( ABSPATH . 'wp-admin/includes/file.php' );
-            require_once( ABSPATH . 'wp-admin/includes/media.php' );
-		}
+		// dependencies
+		global $wp_filesystem;
+		Cine()->helper::load_image_file_system();
 
 		$attachment_id = null;
 
@@ -160,9 +158,15 @@ class New_Movie
 		$width = ( $case === 'poster' ) ? '780' : '1280';
 
 		$url = Cine()->tmdb::build_image_url( $width, $path_for_url );
-		$tmp = download_url( $url );
+		$tmp_file = download_url( $url );
 
-		if( !empty( $tmp ) ) {
+		if( !empty( $tmp_file ) ) {
+
+			// optimize image
+			$tmp_data = $wp_filesystem->get_contents( $tmp_file );
+			$optimized_data = Cine()->tinify->optimize_image_from_data( $tmp_data );
+			$wp_filesystem->put_contents( $tmp_file, $optimized_data );
+
 			$file_name = sprintf(
 				'%s-%s.%s',
 				sanitize_title( $this->title ),
@@ -172,7 +176,7 @@ class New_Movie
 
 			$file = [
 				'name' 		=> $file_name,
-				'tmp_name'	=> $tmp,
+				'tmp_name'	=> $tmp_file,
 			];
 
 			// add image to media library
@@ -182,8 +186,8 @@ class New_Movie
 			update_post_meta( $attachment_id, '_tmdb_path', $path );
 		}
 
-		if( is_file( $tmp ) ) {
-			unlink( $tmp );
+		if( is_file( $tmp_file ) ) {
+			unlink( $tmp_file );
 		}
 
 		return $attachment_id;
