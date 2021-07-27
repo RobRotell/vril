@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Loa;
+namespace Loa\Controller;
 
 
 use WP_Post;
@@ -30,7 +30,7 @@ class Admin
         add_filter( 'manage_' . $post_type . '_posts_columns', 			[ $this, 'add_columns' ] );
         add_action( 'manage_' . $post_type . '_posts_custom_column', 	[ $this, 'populate_columns' ], 10, 2 );
 		add_action( 'save_post_'. $post_type, 							[ $this, 'update_last_updated_value' ] );
-
+		add_filter( 'acf/update_value', 								[ $this, 'maybe_update_last_updated_value' ], 10, 4 );		
 	}
 
 
@@ -55,11 +55,13 @@ class Admin
 			check_admin_referer( $admin_action );
 
 			$auth = sanitize_text_field( $_POST['loa_auth'] );
-			$success = self::set_auth( $auth );
+			if( $auth !== self::get_auth() ) {
+				$success = self::set_auth( $auth );
+			}
 
 			?>
 
-			<?php if( $success ): ?>
+			<?php if( isset( $success ) && $success ): ?>
 				<div id="setting-error-settings_updated" class="notice notice-success settings-error is-dismissible"> 
 					<p><strong>Settings updated!</strong></p>
 					<button type="button" class="notice-dismiss"></button>
@@ -170,30 +172,72 @@ class Admin
 	}
 
 
+	/**
+	 * Get "last updated" value
+	 *
+	 * @return 	string	Last updated value
+	 */	
 	public static function get_last_updated(): string
 	{
 		return get_option( self::OPTION_UPDATE, '' );
 	}
 
 	
+	/**
+	 * Update "last updated" value after saving/creating movies
+	 * 
+	 * This value is used for checking API calls are always using latest information (especially when dealing with 
+	 * transients)
+	 * 
+	 * @return 	void
+	 */		
 	public static function update_last_updated_value(): void
 	{
 		update_option( self::OPTION_UPDATE, time() );
 	}
 
 
-	public static function get_auth(): string
+	/**
+	 * Check that movie post was updated (and if value was changed, then update last updated value)
+	 *
+	 * @param	mixed 	$value 		New field value
+	 * @param 	mixed 	$post_id 	ID of post being saved/updated
+	 * @param 	array 	$field 		Field data
+	 * @param 	mixed 	$orig_value Original field value
+	 * 
+	 * @return 	mixed 				New field value (no change will take place)
+	 */
+	public function maybe_update_last_updated_value( $value, $post_id, $field, $original_value )
 	{
-		$auth = '';
+		if( $value !== $original_value ) {
+			$post = get_post( $post_id );
 
-		if( current_user_can( 'manage_options' ) ) {
-			$auth = get_option( self::OPTION_AUTH, '' );
+			if( !empty( $post ) && $post->post_type === Loa()->core::POST_TYPE ) {
+				self::update_last_updated_value();
+			}
 		}
 
-		return $auth;
+		return $value;
 	}
 
 
+	/**
+	 * Get current auth code
+	 *
+	 * @return 	string 	Auth code
+	 */		
+	public static function get_auth(): string
+	{
+		return get_option( self::OPTION_AUTH, '' );
+	}
+
+
+	/**
+	 * Set new auth code
+	 *
+	 * @param	string	$auth 	New auth code
+	 * @return 	bool 			True, if new auth code was saved
+	 */		
 	public static function set_auth( string $auth ): bool
 	{
 		if( current_user_can( 'manage_options' ) ) {

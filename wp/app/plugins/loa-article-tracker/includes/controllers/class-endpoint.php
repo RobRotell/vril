@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Loa;
+namespace Loa\Controller;
 
 
 use Exception;
@@ -38,16 +38,51 @@ class Endpoint
 	}
 
 
-	public function register_routes()
+	/**
+	 * Get endpoint URL
+	 *
+	 * @return 	string 	Endpoint URL
+	 */
+	public static function get_endpoint_url()
 	{
+		return get_rest_url( null, self::NAMESPACE );
+	}	
+
+
+	/**
+	 * Check if user is authorized for action
+	 *
+	 * @param	WP_REST_Request	$auth 	Submitted authorization code
+	 * @return	bool 					True, if authorized
+	 */
+	public static function check_auth( WP_REST_Request $request ): bool
+	{
+		$auth = $request->get_param( 'auth' );
+
+		return Loa()->admin::check_auth( $auth );
+	}	
+
+
+	/**
+	 * Register routes for endpoint
+	 *
+	 * @return 	void
+	 */
+	public function register_routes(): void
+	{
+		$api = Loa()->api;
+
+		$permission_callback_public	= '__return_true';
+		$permission_callback_auth	= [ $this, 'check_auth' ];
+
 		// grab subset of articles
 		register_rest_route(
 			self::NAMESPACE,
 			'/get-articles',
 			[
 				'methods'				=> WP_REST_Server::READABLE,
-				'callback'				=> [ $this, 'get_articles' ],
-				'permission_callback'	=> '__return_true',
+				'callback'				=> [ $api, 'get_articles' ],
+				'permission_callback'	=> $permission_callback_public,
 				'args'		=> [
 					'page'	=> [
 						'default'			=> 1,
@@ -59,7 +94,7 @@ class Endpoint
 						'type'				=> 'string',
 						'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_int' ],
 					],
-					'category'	=> [
+					'tag'	=> [
 						'default'			=> 0,
 						'type'				=> 'string',
 						'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_int' ], // @todo — could be array
@@ -233,54 +268,7 @@ class Endpoint
 	}
 
 
-	/**
-	 * Handle request for getting articles
-	 *
-	 * @param	WP_Rest_Request		$request	API request
-	 * @return 	WP_REST_Response 				API response
-	 */
-	public function get_articles( WP_Rest_Request $request ): WP_REST_Response
-	{
-		Loa()->helper::load_model( 'Article Block' );
 
-		$page 			= $request->get_param( 'page' );
-		$count 			= $request->get_param( 'count' );
-		$category 		= $request->get_param( 'category' );
-		$keyword 		= $request->get_param( 'keyword' );
-		$is_read 		= $request->get_param( 'read' );
-		$is_favorite 	= $request->get_param( 'favorite' );
-		$no_cache 		= $request->get_param( 'no_cache' );
-
-		$fetch_new 		= false;
-		$last_updated 	= Admin::get_last_updated();
-
-		$data = [
-			'last_updated' => $last_updated
-		];		
-
-		if( $no_cache ) {
-			$fetch_new = true;
-		} else {
-			$transient_key = compact( 'page', 'count', 'category', 'keyword', 'is_read', 'is_favorite' );
-			$transient_key = http_build_query( $transient_key );
-			$transient_key = sprintf( 'loa_fetch_%s', md5( $transient_key ) );
-	
-			$cached_data = get_transient( $transient_key );
-			if( !isset( $cached_data['last_updated'] ) || $last_updated !== $cached_data['last_updated'] ) {
-				$fetch_new = true;
-			} elseif( !isset( $cached_data['movies'] ) || empty( $cached_data['movies'] ) ) {
-				$fetch_new = true;
-			} else {
-				$data = $cached_data;
-			}
-		}
-
-		$data = [];
-
-		$response = new WP_REST_Response( $data );
-
-		return rest_ensure_response( $response );
-	}
 
 
 	/**

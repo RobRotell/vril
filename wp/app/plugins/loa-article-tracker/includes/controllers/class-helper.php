@@ -1,6 +1,7 @@
 <?php
 
-namespace Loa;
+
+namespace Loa\Controller;
 
 
 use DOMDocument;

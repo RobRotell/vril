@@ -6,7 +6,7 @@ import FileType from 'file-type';
 
 ( async () => {
 
-	const assetsDir = './wp/app/assets'
+	const assetsDir = './wp/app/media'
 
 	const readAssetDir = async ( arg ) => {
 		const entries = await promises.readdir( arg )

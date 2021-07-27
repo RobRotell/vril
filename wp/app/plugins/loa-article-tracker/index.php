@@ -4,7 +4,7 @@
  * Plugin Name: Loa
  * Plugin URI:  https://vril.robr.app
  * Description: Controls tracking, storage, and API for articles
- * Version:     0.1.0
+ * Version:     3.0.0
  * Author:      Rob
  * Author URI:  https://robrotell.dev
  *
@@ -26,10 +26,11 @@ class Loa
 
 
     // subclasses
-    public $helper   = null;
-    public $core     = null;
-    public $endpoint = null;
-    public $admin    = null;
+    public $helper      = null;
+    public $core        = null;
+    public $admin       = null;
+    public $api         = null;
+    public $endpoint    = null;
     
 
 	public static function _instance(): self
@@ -60,10 +61,16 @@ class Loa
 
     private function includes(): void
     {
-        require_once( self::$plugin_path_inc . 'classes/class-helper.php' );
-        require_once( self::$plugin_path_inc . 'classes/class-core.php' );
-        require_once( self::$plugin_path_inc . 'classes/class-endpoint.php' );
-        require_once( self::$plugin_path_inc . 'classes/class-admin.php' );
+        // models
+        require_once( self::$plugin_path_inc . 'models/class-api-response.php' );        
+        require_once( self::$plugin_path_inc . 'models/class-article-block.php' );
+
+        // controllers
+        require_once( self::$plugin_path_inc . 'controllers/class-helper.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-core.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-admin.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-api.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-endpoint.php' );
     }
 
 
@@ -75,10 +82,11 @@ class Loa
 
     public function load_classes(): void
     {
-        $this->helper   = new Loa\Helper();
-        $this->core     = new Loa\Core();
-        $this->endpoint = new Loa\Endpoint();
-        $this->admin    = new Loa\Admin();
+        $this->helper   = new Loa\Controller\Helper();
+        $this->core     = new Loa\Controller\Core();
+        $this->admin    = new Loa\Controller\Admin();
+        $this->api      = new Loa\Controller\API();
+        $this->endpoint = new Loa\Controller\Endpoint();
     }
 }
 

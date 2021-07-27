@@ -37,8 +37,6 @@ class Movie_Block
 		$this->title 	= html_entity_decode( $post->post_title );
 		
 		$this->grab_simple_details();		
-		
-		return $this;
 	}
 
 
@@ -98,7 +96,7 @@ class Movie_Block
 
 	public function package()
 	{
-		return (array)$this;
+		return get_object_vars( $this );
 	}
 
 }

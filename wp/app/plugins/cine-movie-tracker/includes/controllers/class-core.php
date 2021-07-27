@@ -42,6 +42,7 @@ class Core
             [
                 'description'           => 'Movies for Rob to watch (or have watched)',
                 'menu_icon'             => 'dashicons-tickets-alt',
+                'menu_position'         => 50,
                 'show_in_menu'          => true,
                 'show_in_rest'          => true,
                 'show_ui'               => true,

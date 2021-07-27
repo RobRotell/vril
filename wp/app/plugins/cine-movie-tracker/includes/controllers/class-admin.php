@@ -135,7 +135,7 @@ class Admin
 										id="cine_auth" 
 										class="regular-text" 
 										name="cine_auth" 
-										type="password" 
+										type="text" 
 										placeholder="••••••••••"
 									/>
 								</td>
@@ -147,7 +147,7 @@ class Admin
 										id="cine_apikey" 
 										class="regular-text" 
 										name="cine_tmdb_apikey" 
-										type="password" 
+										type="text" 
 										placeholder="••••••••••" 
 									/>
 								</td>
@@ -160,7 +160,7 @@ class Admin
 										id="cine_apikey" 
 										class="regular-text" 
 										name="cine_tinify_apikey" 
-										type="password" 
+										type="text" 
 										placeholder="••••••••••" 
 									/>
 								</td>
@@ -302,28 +302,6 @@ class Admin
 		return get_option( self::OPTION_AUTH, '' );
 	}
 
-	
-	/**
-	 * Get API key for TMDB
-	 *
-	 * @return 	string 	API key
-	 */	
-	public static function get_tmdb_apikey(): string
-	{
-		return get_option( self::OPTION_TMDB_APIKEY, '' );
-	}
-
-	
-	/**
-	 * Get API key for TMDB
-	 *
-	 * @return 	string 	API key
-	 */	
-	public static function get_tinify_apikey(): string
-	{
-		return get_option( self::OPTION_TINIFY_APIKEY, '' );
-	}	
-
 
 	/**
 	 * Set new auth code
@@ -342,6 +320,18 @@ class Admin
 		return false;
 	}	
 
+	
+	/**
+	 * Get API key for TMDB
+	 *
+	 * @return 	string 	API key
+	 */	
+	public static function get_tmdb_apikey(): string
+	{
+		return get_option( self::OPTION_TMDB_APIKEY, '' );
+	}
+
+
 
 	/**
 	 * Set new API key
@@ -356,6 +346,17 @@ class Admin
 		}
 		
 		return false;
+	}	
+
+	
+	/**
+	 * Get API key for TMDB
+	 *
+	 * @return 	string 	API key
+	 */	
+	public static function get_tinify_apikey(): string
+	{
+		return get_option( self::OPTION_TINIFY_APIKEY, '' );
 	}	
 
 

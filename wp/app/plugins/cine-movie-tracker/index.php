@@ -4,7 +4,7 @@
  * Plugin Name: Cine
  * Plugin URI:  https://vril.robr.app
  * Description: Controls tracking, storage, and API for movies
- * Version:     0.0.1
+ * Version:     1.0.0
  * Author:      Rob
  * Author URI:  https://robrotell.dev
  *
@@ -26,10 +26,10 @@ class Cine
 
 
     // subclasses
+    public $tmdb        = null;
+    public $tinify      = null;
     public $helper      = null;
     public $core        = null;
-    public $tmdb        = null;
-    public $tinify     = null;
     public $admin       = null;
     public $api         = null;
     public $endpoint    = null;
@@ -76,8 +76,8 @@ class Cine
         // controllers
         require_once( self::$plugin_path_inc . 'controllers/class-helper.php' );
         require_once( self::$plugin_path_inc . 'controllers/class-core.php' );
-        require_once( self::$plugin_path_inc . 'controllers/class-api.php' );
         require_once( self::$plugin_path_inc . 'controllers/class-admin.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-api.php' );
         require_once( self::$plugin_path_inc . 'controllers/class-endpoint.php' );
     }
 

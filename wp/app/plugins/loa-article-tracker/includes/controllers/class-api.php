@@ -1,19 +1,18 @@
 <?php
 
 
-namespace Cine\Controller;
+namespace Loa\Controller;
 
 
 use Exception;
 use Throwable;
 use WP_REST_Request;
 use WP_REST_Response;
+use WP_Query;
 
 
-use Cine\Model\Api_Response as Api_Response;
-use Cine\Model\New_Movie as New_Movie;
-use Cine\Model\Search_Result as Search_Result;
-use Cine\Model\Movie_Block as Movie_Block;
+use Loa\Model\Api_Response as Api_Response;
+use Loa\Model\Article_Block as Article_Block;
 
 
 defined( 'ABSPATH' ) || exit;
@@ -40,6 +39,118 @@ class API
 
 
 	/**
+	 * Handle request for getting articles
+	 *
+	 * @param	WP_Rest_Request		$request	API request
+	 * @return 	WP_REST_Response 				API response
+	 */
+	public function get_articles( WP_Rest_Request $request ): WP_REST_Response
+	{
+		$page 			= $request->get_param( 'page' );
+		$count 			= $request->get_param( 'count' );
+		$tag 			= $request->get_param( 'tag' );
+		$keyword 		= $request->get_param( 'keyword' );
+		$is_read 		= $request->get_param( 'read' );
+		$is_favorite 	= $request->get_param( 'favorite' );
+		$no_cache 		= $request->get_param( 'no_cache' );
+
+		// prep response object
+		$res = self::create_response_obj( 'meta', 'articles' );
+
+		try {
+			$meta		= [];
+			$articles	= [];
+
+			$fetch_new 		= false;
+			$last_updated 	= Loa()->admin::get_last_updated();	
+
+			if( $no_cache ) {
+				$fetch_new = true;
+			} else {
+				$transient_key = compact( 'page', 'count', 'tag', 'keyword', 'is_read', 'is_favorite' );
+				$transient_key = http_build_query( $transient_key );
+				$transient_key = sprintf( 'loa_fetch_%s', md5( $transient_key ) );
+
+				$cached_data = get_transient( $transient_key );
+				if( !isset( $cached_data['meta']['last_updated'] ) || $last_updated !== $cached_data['meta']['last_updated'] ) {
+					$fetch_new = true;
+				} elseif( !isset( $cached_data['articles'] ) || empty( $cached_data['articles'] ) ) {
+					$fetch_new = true;
+				} else {
+					$articles = $cached_data['articles'];
+				}
+			}
+
+			if( $fetch_new ) {
+				$query_args = [
+					'post_type'			=> Loa()->core::POST_TYPE,
+					'posts_per_page'	=> $count,
+					'paged'				=> $page,
+					'meta_query'		=> [
+						'relation'	=> 'AND',
+					]
+				];
+
+				if( $is_favorite ) {
+					$query_args['meta_query'][] = [
+						'key' => 'article_favorite',
+						'value' => '1'
+					];
+				}
+
+				if( $is_read ) {
+					$query_args['meta_query'][] = [
+						'key' => 'article_read',
+						'value' => '1'
+					];
+				}				
+
+				if( !empty( $keyword ) ) {
+					$query_args['s'] = $keyword;
+				}
+
+				if( !empty( $tag ) ) {
+					$query_args['tax_query'] = [
+						[
+							'taxonomy'	=> Loa()->core::TAXONOMY,
+							'terms'		=> $tag,
+						]
+					];
+				}
+
+				$query = new WP_Query( $query_args );
+
+				// additional metadata for frontend
+				$total_count = absint( $query->found_posts );
+				$total_pages = ceil( $total_count / $count );	
+				
+				$meta = compact( 'last_updated', 'total_count', 'total_pages' );
+
+				foreach( $query->posts as $post ) {
+					$article	= new Article_Block( $post );
+					$articles[] = $article->package();
+
+					unset( $article );
+				}
+
+				if( !$no_cache ) {
+					set_transient( $transient_key, compact( 'meta', 'articles' ) );
+				}
+			}
+
+			$res
+				->add_data( $meta, 'meta' )
+				->add_data( $articles, 'articles' );
+
+		} catch( Throwable $e ) {
+			$res->set_error( $e->getMessage() );
+		}
+
+		return rest_ensure_response( $res->package() );		
+	}	
+
+
+	/**
 	 * Get movies from database based on request parameters
 	 *
 	 * @param 	WP_Rest_Request 	$request 	API request
@@ -58,11 +169,12 @@ class API
 		$res = self::create_response_obj( 'meta', 'movies' );
 
 		try {
+			// object for displaying movie details
 			$meta 	= [];
 			$movies = [];
 
 			$fetch_new 		= false;
-			$last_updated 	= Cine()->admin::get_last_updated();
+			$last_updated 	= Admin::get_last_updated();
 	
 			// additional metadata for frontend
 			$total_count = absint( wp_count_posts( Cine()->core::POST_TYPE )->publish );
@@ -89,7 +201,7 @@ class API
 	
 			if( $fetch_new ) {
 				$query_args = [
-					'post_type' 		=> Cine()->core::POST_TYPE,
+					'post_type' 		=> Core::POST_TYPE,
 					'posts_per_page'	=> $count,
 					'paged'				=> $page,
 					'order'				=> 'ASC',
@@ -104,7 +216,7 @@ class API
 				if( !empty( $genre ) ) {
 					$query_args['tax_query'] = [
 						[
-							'taxonomy'	=> Cine()->core::TAXONOMY,
+							'taxonomy'	=> Core::TAXONOMY,
 							'terms'		=> $genre
 						]
 					];

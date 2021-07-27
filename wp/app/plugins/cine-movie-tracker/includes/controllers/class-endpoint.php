@@ -33,7 +33,37 @@ class Endpoint
 	}
 
 
-	public function register_routes()
+	/**
+	 * Get endpoint URL
+	 *
+	 * @return 	string 	Endpoint URL
+	 */
+	public static function get_endpoint_url()
+	{
+		return get_rest_url( null, self::NAMESPACE );
+	}
+
+
+	/**
+	 * Check if user is authorized for action
+	 *
+	 * @param	WP_REST_Request	$auth 	Submitted authorization code
+	 * @return	bool 					True, if authorized
+	 */
+	public static function check_auth( WP_REST_Request $request ): bool
+	{
+		$auth = $request->get_param( 'auth' );
+
+		return Cine()->admin::check_auth( $auth );
+	}	
+
+
+	/**
+	 * Register routes for endpoint
+	 *
+	 * @return 	void
+	 */	
+	public function register_routes(): void
 	{
 		$api = Cine()->api;
 
@@ -217,26 +247,6 @@ class Endpoint
 				]
 			]
 		);			
-	}
-
-
-	public static function get_endpoint_url()
-	{
-		return get_rest_url( null, self::NAMESPACE );
-	}
-
-
-	/**
-	 * Check if user is authorized for action
-	 *
-	 * @param	WP_REST_Request	$auth 	Submitted authorization code
-	 * @return	bool 					True, if authorized
-	 */
-	public static function check_auth( WP_REST_Request $request ): bool
-	{
-		$auth = $request->get_param( 'auth' );
-
-		return Cine()->admin::check_auth( $auth );
 	}
 
 }

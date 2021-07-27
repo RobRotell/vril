@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Loa;
+namespace Loa\Controller;
 
 
 defined( 'ABSPATH' ) || exit;
