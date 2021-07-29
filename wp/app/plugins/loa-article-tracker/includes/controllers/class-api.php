@@ -13,6 +13,7 @@ use WP_Query;
 
 use Loa\Model\Api_Response as Api_Response;
 use Loa\Model\Article_Block as Article_Block;
+use Loa\Model\New_Article as New_Article;
 
 
 defined( 'ABSPATH' ) || exit;
@@ -52,91 +53,64 @@ class API
 		$keyword 		= $request->get_param( 'keyword' );
 		$is_read 		= $request->get_param( 'read' );
 		$is_favorite 	= $request->get_param( 'favorite' );
-		$no_cache 		= $request->get_param( 'no_cache' );
 
 		// prep response object
 		$res = self::create_response_obj( 'meta', 'articles' );
 
 		try {
-			$meta		= [];
-			$articles	= [];
+			$query_args = [
+				'post_type'			=> Loa()->core::POST_TYPE,
+				'posts_per_page'	=> $count,
+				'paged'				=> $page,
+				'meta_query'		=> [
+					'relation'	=> 'AND',
+				]
+			];
 
-			$fetch_new 		= false;
-			$last_updated 	= Loa()->admin::get_last_updated();	
-
-			if( $no_cache ) {
-				$fetch_new = true;
-			} else {
-				$transient_key = compact( 'page', 'count', 'tag', 'keyword', 'is_read', 'is_favorite' );
-				$transient_key = http_build_query( $transient_key );
-				$transient_key = sprintf( 'loa_fetch_%s', md5( $transient_key ) );
-
-				$cached_data = get_transient( $transient_key );
-				if( !isset( $cached_data['meta']['last_updated'] ) || $last_updated !== $cached_data['meta']['last_updated'] ) {
-					$fetch_new = true;
-				} elseif( !isset( $cached_data['articles'] ) || empty( $cached_data['articles'] ) ) {
-					$fetch_new = true;
-				} else {
-					$articles = $cached_data['articles'];
-				}
+			if( $is_favorite ) {
+				$query_args['meta_query'][] = [
+					'key' => 'article_favorite',
+					'value' => '1'
+				];
 			}
 
-			if( $fetch_new ) {
-				$query_args = [
-					'post_type'			=> Loa()->core::POST_TYPE,
-					'posts_per_page'	=> $count,
-					'paged'				=> $page,
-					'meta_query'		=> [
-						'relation'	=> 'AND',
+			if( $is_read ) {
+				$query_args['meta_query'][] = [
+					'key' => 'article_read',
+					'value' => '1'
+				];
+			}				
+
+			if( !empty( $keyword ) ) {
+				$query_args['s'] = $keyword;
+			}
+
+			if( !empty( $tag ) ) {
+				$query_args['tax_query'] = [
+					[
+						'taxonomy'	=> Loa()->core::TAXONOMY,
+						'terms'		=> $tag,
 					]
 				];
-
-				if( $is_favorite ) {
-					$query_args['meta_query'][] = [
-						'key' => 'article_favorite',
-						'value' => '1'
-					];
-				}
-
-				if( $is_read ) {
-					$query_args['meta_query'][] = [
-						'key' => 'article_read',
-						'value' => '1'
-					];
-				}				
-
-				if( !empty( $keyword ) ) {
-					$query_args['s'] = $keyword;
-				}
-
-				if( !empty( $tag ) ) {
-					$query_args['tax_query'] = [
-						[
-							'taxonomy'	=> Loa()->core::TAXONOMY,
-							'terms'		=> $tag,
-						]
-					];
-				}
-
-				$query = new WP_Query( $query_args );
-
-				// additional metadata for frontend
-				$total_count = absint( $query->found_posts );
-				$total_pages = ceil( $total_count / $count );	
-				
-				$meta = compact( 'last_updated', 'total_count', 'total_pages' );
-
-				foreach( $query->posts as $post ) {
-					$article	= new Article_Block( $post );
-					$articles[] = $article->package();
-
-					unset( $article );
-				}
-
-				if( !$no_cache ) {
-					set_transient( $transient_key, compact( 'meta', 'articles' ) );
-				}
 			}
+
+			$query = new WP_Query( $query_args );
+
+			// extract specific data from article posts
+			$articles = [];
+			foreach( $query->posts as $post ) {
+				$article	= new Article_Block( $post );
+				$articles[] = $article->package();
+
+				unset( $article );
+			}
+
+			// additional metadata for frontend
+			$last_updated = Loa()->admin::get_last_updated();	
+			$total_count = absint( $query->found_posts );
+			$total_pages = ceil( $total_count / $count );	
+			
+			$meta = compact( 'last_updated', 'page', 'total_pages', 'total_count' );
 
 			$res
 				->add_data( $meta, 'meta' )
@@ -151,110 +125,156 @@ class API
 
 
 	/**
-	 * Get movies from database based on request parameters
+	 * Handle request for getting all article categories
 	 *
 	 * @param 	WP_Rest_Request 	$request 	API request
 	 * @return	WP_REST_Response 				REST API response
 	 */
-	public function get_movies( WP_Rest_Request $request ): WP_REST_Response
+	public function get_tags( WP_Rest_Request $request ): WP_REST_Response
 	{
-		$page 		= $request->get_param( 'page' );
-		$count 		= $request->get_param( 'count' );
-		$genre 		= $request->get_param( 'genre' );
-		$keyword 	= $request->get_param( 'keyword' );
-		$to_watch 	= $request->get_param( 'to_watch' );
-		$no_cache 	= $request->get_param( 'no_cache' );
-
 		// prep response object
-		$res = self::create_response_obj( 'meta', 'movies' );
+		$res = self::create_response_obj( 'meta', 'tags' );
 
 		try {
-			// object for displaying movie details
-			$meta 	= [];
-			$movies = [];
+			$tax_query = [
+				'hide_empty' 	=> false,
+				'taxonomy' 		=> Loa()->core::TAXONOMY,
+			];
 
-			$fetch_new 		= false;
-			$last_updated 	= Admin::get_last_updated();
-	
-			// additional metadata for frontend
-			$total_count = absint( wp_count_posts( Cine()->core::POST_TYPE )->publish );
-			$total_pages = ceil( $total_count / $count );
-
-			$meta = compact( 'last_updated', 'total_count', 'total_pages' );
-	
-			if( $no_cache ) {
-				$fetch_new = true;
-			} else {
-				$transient_key = compact( 'page', 'count', 'genre', 'keyword', 'to_watch' );
-				$transient_key = http_build_query( $transient_key );
-				$transient_key = sprintf( 'cine_fetch_%s', md5( $transient_key ) );
-		
-				$cached_data = get_transient( $transient_key );
-				if( !isset( $cached_data['meta']['last_updated'] ) || $last_updated !== $cached_data['meta']['last_updated'] ) {
-					$fetch_new = true;
-				} elseif( !isset( $cached_data['movies'] ) || empty( $cached_data['movies'] ) ) {
-					$fetch_new = true;
-				} else {
-					$movies = $cached_data['movies'];
-				}
-			}
-	
-			if( $fetch_new ) {
-				$query_args = [
-					'post_type' 		=> Core::POST_TYPE,
-					'posts_per_page'	=> $count,
-					'paged'				=> $page,
-					'order'				=> 'ASC',
-					'orderby'			=> 'meta_value',
-					'meta_key'			=> 'title_for_compare',
+			$tags = [];
+			foreach( get_terms( $tax_query ) as $term ) {
+				$tags[] = [
+					'id' 	=> $term->term_taxonomy_id,
+					'name' 	=> $term->name,
 				];
-	
-				if( !empty( $keyword ) ) {
-					$query_args['s'] = $keyword;
-				}
-	
-				if( !empty( $genre ) ) {
-					$query_args['tax_query'] = [
-						[
-							'taxonomy'	=> Core::TAXONOMY,
-							'terms'		=> $genre
-						]
-					];
-				}
-	
-				if( $to_watch ) {
-					$query_args['meta_query'] = [
-						[
-							'key'	=> 'to_watch',
-							'value'	=> true
-						]
-					];
-				}
-	
-				foreach( get_posts( $query_args ) as $post ) {
-					$movie 		= new Movie_Block( $post );
-					$movies[] 	= $movie->package();
-	
-					unset( $movie );
-				}
-				
-				$data['movies'] = $movies;
-	
-				if( !$no_cache ) {
-					set_transient( $transient_key, compact( 'meta', 'movies' ) );
-				}
 			}
+
+			$total_count = count( $tags );
+			$last_updated 	= Loa()->admin::get_last_updated();
+
+			$meta = compact( 'last_updated', 'total_count' );
 
 			$res
 				->add_data( $meta, 'meta' )
-				->add_data( $movies, 'movies' );
+				->add_data( $tags, 'tags' );
 
 		} catch( Throwable $e ) {
 			$res->set_error( $e->getMessage() );
 		}
 
-		return rest_ensure_response( $res->package() );
+		return rest_ensure_response( $res->package() );				
 	}
+
+
+	/**
+	 * Handle request for updating an article's read/favorite status
+	 *
+	 * @param 	WP_Rest_Request 	$request 	API request
+	 * @return	WP_REST_Response 				REST API response
+	 */
+	public function update_article( WP_Rest_Request $request ): WP_REST_Response
+	{
+		$article_id	= $request->get_param( 'id' );
+		$read		= $request->get_param( 'read' );
+		$favorite	= $request->get_param( 'favorite' );
+
+		// prep response object
+		$res = self::create_response_obj( 'article' );
+
+		try {
+			$post = get_post( $article_id );
+			if( empty( $post ) || $post->post_type !== Loa()->core::POST_TYPE ) {
+				throw new Exception(
+					sprintf(
+						'No article matches ID: "%s"',
+						$article_id
+					)
+				);
+			}
+
+			// update read status
+			if( is_bool( $read ) ) {
+				update_field( 'article_read', $read, $article_id );
+	
+				// confirm that read status was correctly updated
+				if( $read !== get_field( 'article_read', $article_id ) ) {
+					throw new Exception(
+						sprintf(
+							'Failed to update read status for article (ID: "%s")',
+							$article_id
+						)
+					);
+				}
+			}
+
+			// update favorite status
+			if( is_bool( $favorite ) ) {
+				update_field( 'article_favorite', $favorite, $article_id );
+	
+				// confirm that favorite status was correctly updated
+				if( $favorite !== get_field( 'article_favorite', $article_id ) ) {
+					throw new Exception(
+						sprintf(
+							'Failed to update favorite status for article (ID: "%s")',
+							$article_id
+						)
+					);
+				}
+			}
+
+			// return updated article to frontend
+			$article = new Article_Block( $post );
+			$article->package();
+
+			$res->add_data( $article, 'article' );
+
+		} catch( Throwable $e ) {
+			$res->set_error( $e->getMessage() );
+		}
+
+		return rest_ensure_response( $res->package() );				
+	}	
+
+
+	/**
+	 * Handle request for adding a new article
+	 *
+	 * @param 	WP_Rest_Request 	$request 	API request
+	 * @return	WP_REST_Response 				REST API response
+	 */
+	public function add_article( WP_Rest_Request $request ): WP_REST_Response
+	{
+		$url 		= $request->get_param( 'url' );
+		$tags		= $request->get_param( 'tags' );
+		$read		= $request->get_param( 'read' );
+		$favorite 	= $request->get_param( 'favorite' );
+
+		// prep response object
+		$res = self::create_response_obj( 'article' );
+
+		try {
+			$article = new New_Article( $url );
+
+			// setup basic article
+			$article
+				->set_tags( $tags )
+				->set_read_status( $read )
+				->set_favorite_status( $favorite );
+
+			// save new article
+			$post_id = $article->save_as_post();
+
+			// get article details for frontend
+			$article = new Article_Block( get_post( $post_id ) );
+			
+			$res->add_data( 'article', $article->package() );
+			
+		} catch( Throwable $e ) {
+			$res->set_error( $e->getMessage() );
+		}
+
+		return rest_ensure_response( $res->package() );				
+	}		
 
 
 	/**
@@ -271,267 +291,7 @@ class API
 		// prep response object
 		$res = self::create_response_obj();
 
-		$res->add_data( Admin::get_last_updated(), 'last_updated' );
-
-		return rest_ensure_response( $res->package() );
-	}	
-
-
-	/**
-	 * Get movie by post ID
-	 *
-	 * @param 	WP_Rest_Request 	$request 	API request
-	 * @return	WP_REST_Response 				REST API response
-	 */
-	public function get_movie_by_id( WP_Rest_Request $request ): WP_REST_Response
-	{
-		$id = $request->get_param( 'id' );
-				
-		// prep response object
-		$res = self::create_response_obj( 'movie' );
-
-		try {
-
-			$transient_key = compact( 'id' );
-			$transient_key = http_build_query( $transient_key );
-			$transient_key = sprintf( 'cine_fetch_movie_by_id_%s', md5( $transient_key ) );
-
-			$movie = get_transient( $transient_key );
-
-			if( empty( $movie ) ) {
-
-				// object for displaying movie details
-
-				$post = get_post( $id );
-				if( empty( $post ) ) {
-					$res->set_error( 
-						sprintf( 'No movie matched ID: "%s"', $id ),
-						404
-					);
-				} else {
-					$movie = new Movie_Block( $post );
-					$movie
-						->grab_all_details()
-						->package();
-
-						
-					set_transient( $transient_key, $movie );
-				}
-			}
-				
-			$res->add_data( $movie, 'movie' );
-
-		} catch( Throwable $e ) {
-			$res->set_error( $e->getMessage() );
-		}
-
-		return rest_ensure_response( $res->package() );
-	}
-
-
-	/**
-	 * Search TMDB for movie based on title keyword
-	 *
-	 * @param 	WP_Rest_Request 	$request 	API request
-	 * @return	WP_REST_Response 				REST API response
-	 */
-	public function search_by_title( WP_Rest_Request $request ): WP_REST_Response
-	{
-		$title = $request->get_param( 'title' );
-		$limit = $request->get_param( 'limit' );
-
-		// prep response object
-		$res = self::create_response_obj( 'results' );
-		
-		try {
-			// query TheMovieDatabase for movies that match title
-			$results = Cine()->tmdb::find_movie_by_title( $title, $limit );
-
-			if( empty( $results ) ) {
-				$res->set_error(
-					sprintf( 'No results found for "%s"', $title ),
-					404
-				);
-			} else {
-				$i = 0;
-				foreach( $results as $result ) {
-					if( $i > $limit ) {
-						break;
-					}
-					
-					// convert to pretty search results
-					$result = new Search_Result( $result );
-
-					$res->add_data( $result->package(), 'results' );
-
-					++$i;
-				}
-			}
-
-		} catch( Throwable $e ) {
-			$res->set_error( $e->getMessage() );
-		}
-
-		return rest_ensure_response( $res->package() );
-	}
-
-
-	/**
-	 * Add movie to WP DB based on TMDB movie ID
-	 *
-	 * @param 	WP_Rest_Request 	$request 	API request
-	 * @return	WP_REST_Response 				REST API response
-	 */	
-	public function add_movie_by_id( WP_Rest_Request $request ): WP_REST_Response
-	{
-		$tmdb_id	= $request->get_param( 'id' );
-		$status 	= $request->get_param( 'to_watch' );
-
-		// prep response object
-		$res = self::create_response_obj( 'movie' );
-
-		try {
-			// query TMDB for movie details
-			$details = Cine()->tmdb::find_movie_details( $tmdb_id );
-
-			// query TMDB for movie credits
-			$credits = Cine()->tmdb::find_movie_credits( $tmdb_id );
-
-			// setup basic movie
-			$new_movie = new New_Movie( $details );
-			$new_movie
-				->set_watch_status( $status )
-				->set_credits( $credits );
-
-			// save as movie post
-			$post_id = $new_movie->save_as_post();
-
-			$movie_post = new Movie_Block( get_post( $post_id ) );
-			$movie_post
-				->grab_all_details()
-				->package();
-			
-			$res->add_data( $movie_post, 'movie' );
-
-		} catch( Throwable $e ) {
-			$res->set_error( $e->getMessage() );
-		}
-
-		return rest_ensure_response( $res->package() );
-	}
-
-
-	/**
-	 * Set "to watch" movie as "watched"
-	 *
-	 * @param 	WP_Rest_Request 	$request 	API request
-	 * @return	WP_REST_Response 				REST API response
-	 */	
-	public function set_movie_as_watched( WP_Rest_Request $request ): WP_REST_Response
-	{
-		$movie_id	= $request->get_param( 'id' );
-		// $watched	= $request->get_param( 'watched' );
-
-		// prep response object
-		$res = self::create_response_obj( 'movie' );
-
-		try {
-			$post = get_post( $movie_id );
-			if( empty( $post ) || $post->post_type !== Cine()->core::POST_TYPE ) {
-				throw new Exception( 
-					sprintf(
-						'No movie matches ID: "%s"', 
-						$movie_id 
-					)
-				);
-			}
-
-			$success = update_field( 'to_watch', false, $movie_id );
-
-			/**
-			 * ACF returns false if trying to update a field to a value that was actually already set. Instead of 
-			 * returning an error, let's double-check the new value. 
-			 * 
-			 */ 
-			if( !$success ) {
-
-				// should be false if saved correctly
-				if( get_field( 'to_watch', $movie_id ) ) {
-					throw new Exception( 
-						sprintf( 
-							'Failed to update watch status for "%s" (ID: "%s")', 
-							$post->post_title, 
-							$movie_id 
-						) 
-					);
-				}
-			}
-
-			$movie = new Movie_Block( $post );
-			$movie
-				->grab_all_details()
-				->package();
-
-			$res->add_data( $movie, 'movie' );
-
-		} catch( Throwable $e ) {
-			$res->set_error( $e->getMessage() );
-		}
-
-		return rest_ensure_response( $res->package() );		
-	}	
-
-
-	/**
-	 * Delete movie from WP DB
-	 *
-	 * @param 	WP_Rest_Request 	$request 	API request
-	 * @return	WP_REST_Response 				REST API response
-	 */	
-	public function delete_movie( WP_Rest_Request $request ): WP_REST_Response
-	{
-		$movie_id = $request->get_param( 'id' );
-
-		// prep response object
-		$res = self::create_response_obj();
-
-		try {
-			$post = get_post( $movie_id );
-			if( empty( $post ) || $post->post_type !== Cine()->core::POST_TYPE ) {
-				throw new Exception( 
-					sprintf( 
-						'No movie matches ID: "%s"', 
-						$movie_id 
-					) 
-				);
-			}
-
-			// delete movie poster image
-			if( !empty( $thumb_id = get_post_thumbnail_id( $movie_id ) ) ) {
-				wp_delete_attachment( $thumb_id, true );
-			}
-
-			// delete movie backdrop imageimage for backdrop
-			if( !empty( $attachment_id = get_field( 'backdrop', $movie_id ) ) ) {
-				wp_delete_attachment( $attachment_id, true );
-			}
-
-			$deleted_post = wp_delete_post( $movie_id, true );
-			if( empty( $deleted_post ) ) {
-				throw new Exception( 
-					sprintf( 
-						'Failed to delete movie: "%s" with ID: "%s"',
-						$post->post_title,
-						$movie_id
-					)
-				);
-			}
-
-			$res->add_data( true, 'deleted' );
-
-		} catch( Throwable $e ) {
-			$res->set_error( $e->getMessage() );
-		}
+		$res->add_data( 'last_updated', Admin::get_last_updated() );
 
 		return rest_ensure_response( $res->package() );
 	}	

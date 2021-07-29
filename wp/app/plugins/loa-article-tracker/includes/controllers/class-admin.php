@@ -127,7 +127,7 @@ class Admin
     {
         unset( $columns['date'] );
 
-        $columns['date_read']	= 'Read';
+        $columns['read']		= 'Read';
         $columns['favorited'] 	= 'Favorited';
         $columns['link_tags'] 	= 'Tags';
 
@@ -138,20 +138,14 @@ class Admin
     public function populate_columns( $column, $post_id )
     {
 		switch( $column ) {
-			case 'date_added':
-				if( !empty( $date = get_field( 'article_date_added', $post_id ) ) ) {
-					echo date( 'Y-m-d', strtotime( $date ) );
-				}
-				break;
-
-			case 'date_read':
-				if( !empty( $date = get_field( 'article_date_read', $post_id ) ) ) {
-                	echo date( 'Y-m-d', strtotime( $date ) );				
+			case 'read':
+				if( !empty( get_field( 'article_read', $post_id ) ) ) {
+                	echo '&#10003;';				
 				}
 				break;
 
 			case 'favorited':
-				if( !empty( get_field( 'article_is_favorite', $post_id ) ) ) {
+				if( !empty( get_field( 'article_favorite', $post_id ) ) ) {
                 	echo '&#10003;';				
 				}
 				break;
@@ -219,6 +213,20 @@ class Admin
 
 		return $value;
 	}
+
+
+	/**
+	 * Check if passed string matches authorization code
+	 *
+	 * @param	string	$arg 	Potential auth code
+	 * @return 	bool 			True, if arg matches auth code
+	 */	
+	public static function check_auth( string $arg = '' ): bool
+	{
+		$arg = Loa()->helper::hash( $arg );
+
+		return $arg === self::get_auth();
+	}	
 
 
 	/**

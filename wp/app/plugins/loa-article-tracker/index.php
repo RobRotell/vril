@@ -64,6 +64,7 @@ class Loa
         // models
         require_once( self::$plugin_path_inc . 'models/class-api-response.php' );        
         require_once( self::$plugin_path_inc . 'models/class-article-block.php' );
+        require_once( self::$plugin_path_inc . 'models/class-new-article.php' );
 
         // controllers
         require_once( self::$plugin_path_inc . 'controllers/class-helper.php' );

@@ -50,7 +50,7 @@ final class Vril_Utility
 	/**
 	 * Convert value to boolean
 	 *
-	 * @param	string 	$var 	Variable to convert to boolean
+	 * @param	mixed 	$var 	Variable to convert to boolean
 	 * @return 	boolean 		Boolean
 	 */
 	public static function convert_to_bool( $var ): bool
@@ -82,21 +82,30 @@ final class Vril_Utility
 
 
 	/**
-	 * Wrapper for var_dump to make it easier to trace where var_dump commands are being invoked
+	 * Convert value to an array
 	 *
-	 * @param	mixed 	$var 	Variables
-	 * @return 	void
+	 * @param	mixed 	$arg 		Arg to turn into an array
+	 * @param 	string 	$separator 	Text separator
+	 * 
+	 * @return 	array 				Resulting array
 	 */
-	public static function vd( ...$args ): void 
+	public static function convert_to_array( $arg, string $separator = ',' ): array
 	{
-		foreach( $args as $arg ) {
-			$caller = debug_backtrace()[0];
-
-			printf( '<pre data-fl="%s:%s"><code>', $caller['file'], $caller['line'] ); 
-			var_dump( $arg ); 
-			echo '</code></pre>';
+		if( is_string( $arg ) ) {
+			if( !empty( $maybe_json = json_decode( $arg, true ) ) ) {
+				$arg = $maybe_json;
+			} else {
+				$arg = explode( $separator, $arg );
+			}
+		} elseif( is_int( $arg ) || is_float( $arg ) || is_object( $arg ) ) {
+			$arg = (array)$arg;
+		} else {
+			$arg = [];
 		}
-	}
 
+		$arg = self::sanitize_var( $arg );
+
+		return $arg;
+	}
 
 }

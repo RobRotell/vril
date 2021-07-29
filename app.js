@@ -39,7 +39,9 @@ import FileType from 'file-type';
 		const newFilePath = path.replace( /\.[^/.]+$/, '.webp' )
 
 		sharp( path )
-			.webp()
+			.webp({
+				nearLossless: true
+			})
 			.toFile( newFilePath, err => console.error( err ) )
 	}
 
@@ -48,7 +50,9 @@ import FileType from 'file-type';
 		const newFilePath = path.replace( /\.[^/.]+$/, '.avif' )
 
 		sharp( path )
-			.avif()
+			.avif({
+				lossless: true	
+			})
 			.toFile( newFilePath, err => console.error( err ) )
 	}
 

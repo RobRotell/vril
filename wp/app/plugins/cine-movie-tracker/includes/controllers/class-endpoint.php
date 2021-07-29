@@ -113,7 +113,7 @@ class Endpoint
 			]
 		);
 
-		// grab subset of movies
+		// get time for when last movie was updated
 		register_rest_route(
 			self::NAMESPACE,
 			'/get-last-updated-time',

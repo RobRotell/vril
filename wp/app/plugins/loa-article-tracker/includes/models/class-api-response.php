@@ -114,7 +114,7 @@ class Api_Response
 	 * 
 	 * @return 	self 			Response object
 	 */
-	public function add_data( $data, string $key ): self
+	public function add_data( string $key, $data ): self
 	{
 		if( !isset( $this->data[ $key ] ) ) {
 			$this->add_data_key( $key );

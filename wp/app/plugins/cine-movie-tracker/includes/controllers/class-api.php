@@ -8,6 +8,7 @@ use Exception;
 use Throwable;
 use WP_REST_Request;
 use WP_REST_Response;
+use WP_Query;
 
 
 use Cine\Model\Api_Response as Api_Response;
@@ -64,12 +65,6 @@ class API
 			$fetch_new 		= false;
 			$last_updated 	= Cine()->admin::get_last_updated();
 	
-			// additional metadata for frontend
-			$total_count = absint( wp_count_posts( Cine()->core::POST_TYPE )->publish );
-			$total_pages = ceil( $total_count / $count );
-
-			$meta = compact( 'last_updated', 'total_count', 'total_pages' );
-	
 			if( $no_cache ) {
 				$fetch_new = true;
 			} else {
@@ -83,6 +78,7 @@ class API
 				} elseif( !isset( $cached_data['movies'] ) || empty( $cached_data['movies'] ) ) {
 					$fetch_new = true;
 				} else {
+					$meta 	= $cached_data['meta'];
 					$movies = $cached_data['movies'];
 				}
 			}
@@ -118,15 +114,21 @@ class API
 						]
 					];
 				}
+
+				$query = new WP_Query( $query_args );
+
+				// additional metadata for frontend
+				$total_count = absint( $query->found_posts );
+				$total_pages = ceil( $total_count / $count );	
+				
+				$meta = compact( 'last_updated', 'page', 'total_pages', 'total_count' );				
 	
-				foreach( get_posts( $query_args ) as $post ) {
+				foreach( $query->posts as $post ) {
 					$movie 		= new Movie_Block( $post );
 					$movies[] 	= $movie->package();
 	
 					unset( $movie );
 				}
-				
-				$data['movies'] = $movies;
 	
 				if( !$no_cache ) {
 					set_transient( $transient_key, compact( 'meta', 'movies' ) );
@@ -317,8 +319,7 @@ class API
 	 */	
 	public function set_movie_as_watched( WP_Rest_Request $request ): WP_REST_Response
 	{
-		$movie_id	= $request->get_param( 'id' );
-		// $watched	= $request->get_param( 'watched' );
+		$movie_id = $request->get_param( 'id' );
 
 		// prep response object
 		$res = self::create_response_obj( 'movie' );
