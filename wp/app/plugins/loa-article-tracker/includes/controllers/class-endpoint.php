@@ -79,17 +79,17 @@ class Endpoint
 					'page'	=> [
 						'default'			=> 1,
 						'type'				=> 'string',
-						'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_int' ],
+						'sanitize_callback'	=> 'absint',
 					],
 					'count'	=> [
 						'default'			=> 50,
 						'type'				=> 'string',
-						'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_int' ],
+						'sanitize_callback'	=> 'absint',
 					],
 					'tag'	=> [
 						'default'			=> 0,
 						'type'				=> 'string',
-						'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_int' ], // @todo — could be array
+						'sanitize_callback'	=> 'absint', // @todo — could be array
 					],
 					'keyword' => [
 						'default'			=> '',
@@ -149,7 +149,7 @@ class Endpoint
 					'id'	=> [
 						'required'			=> true,
 						'type'				=> 'string',
-						'sanitize_callback' => [ 'Vril_Utility', 'convert_to_int' ],
+						'sanitize_callback' => 'absint',
 					],					
 					'read'	=> [
 						'default'			=> null,

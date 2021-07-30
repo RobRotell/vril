@@ -63,23 +63,19 @@ class API
 				'posts_per_page'	=> $count,
 				'paged'				=> $page,
 				'meta_query'		=> [
-					'relation'	=> 'AND',
+					'relation' => 'AND',
+					[
+						'key' => 'article_favorite',
+						'value' => '1',
+						'compare' => ( $is_favorite ) ? '=' : '!='
+					],
+					[
+						'key' => 'article_read',
+						'value' => '1',
+						'compare' => ( $is_read ) ? '=' : '!='
+					],					
 				]
 			];
-
-			if( $is_favorite ) {
-				$query_args['meta_query'][] = [
-					'key' => 'article_favorite',
-					'value' => '1'
-				];
-			}
-
-			if( $is_read ) {
-				$query_args['meta_query'][] = [
-					'key' => 'article_read',
-					'value' => '1'
-				];
-			}				
 
 			if( !empty( $keyword ) ) {
 				$query_args['s'] = $keyword;
@@ -106,15 +102,17 @@ class API
 			}
 
 			// additional metadata for frontend
-			$last_updated = Loa()->admin::get_last_updated();	
-			$total_count = absint( $query->found_posts );
-			$total_pages = ceil( $total_count / $count );	
+			$last_updated	= Loa()->admin::get_last_updated();
+			$page_count		= count( $articles );
+			$total_count	= absint( $query->found_posts );
+			$total_pages	= ceil( $total_count / $count );	
+			$current_page	= ( $total_pages > $page ) ? $page : $total_pages;
 			
-			$meta = compact( 'last_updated', 'page', 'total_pages', 'total_count' );
+			$meta = compact( 'last_updated', 'current_page', 'total_pages', 'page_count', 'total_count' );
 
 			$res
-				->add_data( $meta, 'meta' )
-				->add_data( $articles, 'articles' );
+				->add_data( 'meta', $meta )
+				->add_data( 'articles', $articles );
 
 		} catch( Throwable $e ) {
 			$res->set_error( $e->getMessage() );
@@ -155,8 +153,8 @@ class API
 			$meta = compact( 'last_updated', 'total_count' );
 
 			$res
-				->add_data( $meta, 'meta' )
-				->add_data( $tags, 'tags' );
+				->add_data( 'meta', $meta )
+				->add_data( 'tags', $tags );
 
 		} catch( Throwable $e ) {
 			$res->set_error( $e->getMessage() );
@@ -226,7 +224,7 @@ class API
 			$article = new Article_Block( $post );
 			$article->package();
 
-			$res->add_data( $article, 'article' );
+			$res->add_data( 'article', $article );
 
 		} catch( Throwable $e ) {
 			$res->set_error( $e->getMessage() );

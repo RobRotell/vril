@@ -170,14 +170,14 @@ class New_Article
 			'post_status'	=> 'publish',
 			'post_title' 	=> $this->title,
 			'post_type'		=> Loa()->core::POST_TYPE,
-			'meta_input'	=> [
-				'article_read'		=> $this->read,
-				'article_favorite'	=> $this->favorite,
-			]
 		];
 
 		// add movie as post
 		$this->post_id = wp_insert_post( $post_data );
+
+		// updating ACF separately (fixes issues with meta queries down the road)
+		update_field( 'article_read', $this->read );
+		update_field( 'article_favorite', $this->favorite );
 
 		// assign genres
 		if( !empty( $this->tags ) ) {

@@ -47,13 +47,20 @@ class Article_Block
 
     private function get_tags()
     {
-        $this->tags = wp_get_object_terms( 
+        $tags = wp_get_object_terms( 
             $this->id, 
             Loa()->core::TAXONOMY, 
             [ 
-                'fields' => 'tt_ids' 
+                'fields' => 'id=>name' 
             ] 
         );
+
+        foreach( $tags as $term_id => $term_name ) {
+            $this->tags[] = [
+                'id'    => absint( $term_id ),
+                'name'  => $term_name
+            ];
+        }
 
         return $this;
     }

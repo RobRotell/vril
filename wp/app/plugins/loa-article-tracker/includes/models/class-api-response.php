@@ -86,7 +86,7 @@ class Api_Response
 	 */
 	public function add_data_key( string $key ): self
 	{
-		$this->data[ $key ] = [];
+		$this->data[ $key ] = null;
 
 		return $this;
 	}
@@ -120,7 +120,7 @@ class Api_Response
 			$this->add_data_key( $key );
 		}
 
-		$this->data[ $key ][] = $data;
+		$this->data[ $key ] = $data;
 
 		return $this;
 	}
