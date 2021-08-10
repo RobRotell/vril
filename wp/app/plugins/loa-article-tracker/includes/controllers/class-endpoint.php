@@ -197,7 +197,25 @@ class Endpoint
 					]
 				]
 			]
-		);			
+		);	
+				
+		// check that auth token is correct
+		register_rest_route(
+			self::NAMESPACE,
+			'/check-auth',
+			[
+				'callback'				=> [ $api, 'check_auth' ],
+				'methods'				=> WP_REST_Server::EDITABLE,
+				'permission_callback'	=> '__return_true',
+				'args' 					=> [
+					'auth'	=> [
+						'required'			=> true,
+						'type'				=> 'string',
+						'sanitize_callback' => [ 'Vril_Utility', 'sanitize_var' ],
+					],
+				],
+			]
+		);		
 	}
 
 

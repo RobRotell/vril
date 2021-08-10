@@ -276,6 +276,27 @@ class API
 
 
 	/**
+	 * Check that auth is correct doe
+	 *
+	 * @param 	WP_Rest_Request 	$request 	API request
+	 * @return	WP_REST_Response 				REST API response
+	 */
+	public function check_auth( WP_Rest_Request $request ): WP_REST_Response
+	{
+		// prep response object
+		$auth = $request->get_param( 'auth' );
+
+		$res = self::create_response_obj();
+
+		$is_valid = Loa()->admin::check_auth( $auth );
+
+		$res->add_data( 'valid', $is_valid );
+
+		return rest_ensure_response( $res->package() );				
+	}			
+
+
+	/**
 	 * Get last updated time
 	 * 
 	 * Apps can use this option as a way to quickly check if the values saved in cache/local storage are out-of-date. 
