@@ -38,7 +38,7 @@ class Article_Block
     {
         $this->is_read      = Vril_Utility::convert_to_bool( get_field( 'article_read', $this->id ) );
         $this->is_favorite  = Vril_Utility::convert_to_bool( get_field( 'article_favorite', $this->id ) );
-    
+        
         $this->url = esc_url( get_field( 'article_url', $this->id ) );
 
         return $this;

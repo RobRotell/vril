@@ -6,6 +6,7 @@ namespace Loa\Model;
 
 use Vril_Utility;
 use DateTime;
+use Exception;
 
 
 defined( 'ABSPATH' ) || exit;
@@ -35,11 +36,17 @@ class New_Article
 	 */
 	public function __construct( string $url )
 	{
-		$this->url = esc_url_raw( $url );
+		$valid_url = wp_http_validate_url( $url );
 
-		$this
-			->check_for_preexisting_article() // have we already added this article?
-			->set_post_meta();
+		if( !$valid_url ) {
+			throw new Exception( sprintf( 'Invalid URL: "%s"', $url ) );
+
+		} else {
+			$this->url = $valid_url;
+			$this
+				->check_for_preexisting_article() // have we already added this article?
+				->set_post_meta();			
+		}
 	}
 
 
@@ -176,8 +183,9 @@ class New_Article
 		$this->post_id = wp_insert_post( $post_data );
 
 		// updating ACF separately (fixes issues with meta queries down the road)
-		update_field( 'article_read', $this->read );
-		update_field( 'article_favorite', $this->favorite );
+		update_field( 'article_read', $this->read, $this->post_id );
+		update_field( 'article_favorite', $this->favorite, $this->post_id );
+		update_field( 'article_url', esc_url_raw( $this->url ), $this->post_id );
 
 		// assign genres
 		if( !empty( $this->tags ) ) {

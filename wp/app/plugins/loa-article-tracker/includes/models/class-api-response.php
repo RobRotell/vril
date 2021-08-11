@@ -55,7 +55,7 @@ class Api_Response
 
 		$this
 			->add_data_key( 'error' )
-			->add_data( $err, 'error' )
+			->add_data( 'error', $err )
 			->set_status_code( $response_code ); // HTTP response status
 
 		return $this;
@@ -155,14 +155,18 @@ class Api_Response
 	 */
 	private function get_packaged_data(): array
 	{
+		$this->duration = ( $this->end - $this->start );
+
 		$packaged = [
 			'success'	=> $this->success,
 			'data'		=> $this->data,
 		];
 
 		if( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			$packaged['duration'] = ( $this->end - $this->start );
+			$packaged['duration'] = $this->duration;
 		}
+
+		$this->fulfilled = true;		
 
 		return $packaged;
 	}
