@@ -62,6 +62,8 @@ class New_Article
 	
 		if( !empty( $meta['title'] ) ) {
 			$this->title = $meta['title'];
+		} else {
+			$this->title = $this->url;
 		}
 	
 		if( !empty( $meta['description'] ) ) {
@@ -78,7 +80,8 @@ class New_Article
 	 */
 	public function set_tags( array $tags ): self
 	{
-		$this->tags = [];
+		$tags = array_map( 'absint', $tags );
+		$tags = array_filter( $tags );
 
 		foreach( $tags as $tag ) {
 			if( Loa()->helper::is_tag_id( $tag ) ) {

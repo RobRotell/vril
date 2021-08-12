@@ -1,7 +1,10 @@
 <?php
 
+declare( strict_types = 1 );
 
 namespace Loa\Controller;
+
+
 
 
 use DOMDocument;
@@ -38,13 +41,11 @@ class Helper
 	/**
 	 * Check if value matches a tag
 	 *
-	 * @param	mixed 	$arg 	Potential tag ID
+	 * @param	int		$arg 	Potential tag ID
 	 * @return 	bool 			True, if arg matches tag
 	 */
-	public static function is_tag_id( $arg ): bool
+	public static function is_tag_id( int $arg ): bool
 	{
-		$arg = absint( $arg );
-
 		if( !empty( $arg ) ) {
 			$match = get_term( $arg, Loa()->core::TAXONOMY );
 
@@ -72,6 +73,7 @@ class Helper
 		];
 
 		if( !empty( $url = esc_url( $url ) ) ) {
+
 			$request = wp_safe_remote_get( $url );
 
 			if( 200 === wp_remote_retrieve_response_code( $request ) ) {
@@ -84,6 +86,7 @@ class Helper
 				$xpath = new DOMXPath( $doc );
 
 				$nodes = $xpath->query( '//head/title' );
+
 				foreach( $nodes as $node ) {
 					$text = trim( $node->nodeValue );
 					$text = self::sanitize_var_heavy( $text );

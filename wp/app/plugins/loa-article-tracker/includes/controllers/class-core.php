@@ -72,11 +72,12 @@ class Core
             self::TAXONOMY, 
             self::POST_TYPE, 
             [
-                'label'         => 'Categories',
+                'label'         => 'Tags',
+                'show_in_rest'  => true,
                 'show_tagcloud' => false,
                 'labels'        => [
-                    'name'          => 'Categories',
-                    'singular_name' => 'Category',
+                    'name'          => 'Tags',
+                    'singular_name' => 'Tag',
                 ],                
             ]
         );

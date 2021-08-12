@@ -152,6 +152,7 @@ class Admin
 
 			case 'link_tags':
 				$terms = wp_get_object_terms( $post_id, Loa()->core::TAXONOMY );
+
 				if( !empty( $terms ) ) {
 					$tags = [];
 					foreach( $terms as $term ) {

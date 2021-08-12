@@ -93,7 +93,7 @@ final class Vril_Utility
 	{
 		if( is_string( $arg ) ) {
 			if( !empty( $maybe_json = json_decode( $arg, true ) ) ) {
-				$arg = $maybe_json;
+				$arg = (array)$maybe_json;
 			} else {
 				$arg = explode( $separator, $arg );
 			}
