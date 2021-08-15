@@ -106,9 +106,17 @@ class API
 			$page_count		= count( $articles );
 			$total_count	= absint( $query->found_posts );
 			$total_pages	= ceil( $total_count / $count );	
+			$total_read 	= Loa()->helper::get_read_articles( true );
 			$current_page	= ( $total_pages > $page ) ? $page : $total_pages;
 			
-			$meta = compact( 'last_updated', 'current_page', 'total_pages', 'page_count', 'total_count' );
+			$meta = compact( 
+				'current_page', 
+				'last_updated', 
+				'page_count', 
+				'total_count',
+				'total_pages', 
+				'total_read'
+			);
 
 			$res
 				->add_data( 'meta', $meta )

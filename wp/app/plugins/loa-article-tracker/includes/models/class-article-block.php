@@ -41,6 +41,11 @@ class Article_Block
         
         $this->url = esc_url( get_field( 'article_url', $this->id ) );
 
+        // if no actual title, use URL for title
+        if( empty( $this->title ) ) {
+            $this->title = $this->url;
+        }        
+
         return $this;
     }
 

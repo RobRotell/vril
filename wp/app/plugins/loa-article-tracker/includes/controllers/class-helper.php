@@ -133,4 +133,31 @@ class Helper
 		return $value;
 	}
 
+
+	/**
+	 * Get number of read articles
+	 * 
+	 * @param 	bool 		$count 	Return count of read articles or actual read articles
+	 * @return 	int|array 			If count is true, then number of read articles; otherwise array of read articles 	
+	 */
+	public static function get_read_articles( bool $count = false ): int|array
+	{
+		$articles = get_posts(
+			[
+				'post_type' 		=> Loa()->core::POST_TYPE,
+				'posts_per_page'	=> -1,
+				'meta_compare'		=> '=',
+				'meta_key'			=> 'article_read',
+				'meta_value'		=> '1',
+				'fields'			=> $count,
+			]
+		);
+
+		if( $count ) {
+			return count( $articles );
+		} else {
+			return $articles;
+		}
+	}
+
 }
