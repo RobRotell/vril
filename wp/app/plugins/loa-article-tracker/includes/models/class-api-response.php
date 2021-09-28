@@ -43,6 +43,7 @@ class Api_Response
 	 *
 	 * @param	string	$err 			Error message
 	 * @param 	int 	$response_code 	HTTP response code
+	 * 
 	 * @return	self 					Response object
 	 */
 	public function set_error( string $err, int $response_code = 500 ): self
@@ -137,7 +138,8 @@ class Api_Response
 		$this->fulfilled	= true;
 
 		if( !$this->error ) {
-			$this->success = true;
+			$this->status_code	= 200;
+			$this->success		= true;
 		}
 
 		$response = $this->response;

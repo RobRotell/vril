@@ -135,10 +135,23 @@ class Helper
 
 
 	/**
+	 * Get total number of articles, regardless of read status
+	 *
+	 * @return	int 	Count of articles
+	 */
+	public static function get_total_article_count()
+	{
+		$posts_by_status = wp_count_posts( Loa()->core::POST_TYPE );
+
+		return $posts_by_status->publish;
+	}
+
+
+	/**
 	 * Get number of read articles
 	 * 
-	 * @param 	bool 		$count 	Return count of read articles or actual read articles
-	 * @return 	int|array 			If count is true, then number of read articles; otherwise array of read articles 	
+	 * @param 	bool 		$count 	Return count of articles or actual article posts
+	 * @return 	int|array 			Number of articles if count is true; otherwise array of article posts
 	 */
 	public static function get_read_articles( bool $count = false ): int|array
 	{
@@ -159,5 +172,32 @@ class Helper
 			return $articles;
 		}
 	}
+
+
+	/**
+	 * Get number of unread articles
+	 * 
+	 * @param 	bool 		$count 	Return count of articles or actual article posts
+	 * @return 	int|array 			Number of articles if count is true; otherwise array of article posts
+	 */
+	public static function get_unread_articles( bool $count = false ): int|array
+	{
+		$articles = get_posts(
+			[
+				'post_type' 		=> Loa()->core::POST_TYPE,
+				'posts_per_page'	=> -1,
+				'meta_compare'		=> '!=',
+				'meta_key'			=> 'article_read',
+				'meta_value'		=> '1',
+				'fields'			=> $count,
+			]
+		);
+
+		if( $count ) {
+			return count( $articles );
+		} else {
+			return $articles;
+		}
+	}	
 
 }

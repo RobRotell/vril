@@ -59,9 +59,9 @@ class API
 
 		try {
 			$query_args = [
+				'paged'				=> $page,
 				'post_type'			=> Loa()->core::POST_TYPE,
 				'posts_per_page'	=> $count,
-				'paged'				=> $page,
 				'meta_query'		=> [
 					'relation' => 'AND',
 					[
@@ -100,27 +100,26 @@ class API
 
 				unset( $article );
 			}
+			$res->add_data( 'articles', $articles );
 
 			// additional metadata for frontend
-			$last_updated	= Loa()->admin::get_last_updated();
-			$page_count		= count( $articles );
-			$total_count	= absint( $query->found_posts );
-			$total_pages	= ceil( $total_count / $count );	
-			$total_read 	= Loa()->helper::get_read_articles( true );
-			$current_page	= ( $total_pages > $page ) ? $page : $total_pages;
+			$last_updated			= Loa()->admin::get_last_updated();
+			$page_size				= count( $articles );
+			$total_articles			= Loa()->helper::get_unread_articles( true );
+			$total_pages			= ceil( $total_articles / $count );	
+			$page_index				= ( $total_pages > $page ) ? $page : $total_pages;
+			$total_read_articles	= Loa()->helper::get_read_articles( true );
 			
 			$meta = compact( 
-				'current_page', 
 				'last_updated', 
-				'page_count', 
-				'total_count',
-				'total_pages', 
-				'total_read'
+				'page_index', 
+				'page_size', 
+				'total_pages',
+				'total_articles', 
+				'total_read_articles'
 			);
 
-			$res
-				->add_data( 'meta', $meta )
-				->add_data( 'articles', $articles );
+			$res->add_data( 'meta', $meta );
 
 		} catch( Throwable $e ) {
 			$res->set_error( $e->getMessage() );
@@ -154,15 +153,14 @@ class API
 					'name' 	=> $term->name,
 				];
 			}
+			$res->add_data( 'tags', $tags );
 
 			$total_count = count( $tags );
 			$last_updated 	= Loa()->admin::get_last_updated();
 
 			$meta = compact( 'last_updated', 'total_count' );
 
-			$res
-				->add_data( 'meta', $meta )
-				->add_data( 'tags', $tags );
+			$res->add_data( 'meta', $meta );
 
 		} catch( Throwable $e ) {
 			$res->set_error( $e->getMessage() );
@@ -185,7 +183,7 @@ class API
 		$favorite	= $request->get_param( 'favorite' );
 
 		// prep response object
-		$res = self::create_response_obj( 'article' );
+		$res = self::create_response_obj( 'meta', 'article' );
 
 		try {
 			$post = get_post( $article_id );
@@ -234,6 +232,18 @@ class API
 
 			$res->add_data( 'article', $article );
 
+			// update metadata for frontend
+			// update metadata for frontend
+			$total_articles 		= Loa()->helper::get_unread_articles( true );
+			$total_read_articles 	= Loa()->helper::get_read_articles( true );
+			
+			$meta = compact( 
+				'total_articles', 
+				'total_read_articles', 
+			);
+
+			$res->add_data( 'meta', $meta );			
+
 		} catch( Throwable $e ) {
 			$res->set_error( $e->getMessage() );
 		}
@@ -256,7 +266,7 @@ class API
 		$favorite 	= $request->get_param( 'favorite' );
 
 		// prep response object
-		$res = self::create_response_obj( 'article' );
+		$res = self::create_response_obj( 'meta', 'article' );
 
 		try {
 			$article = new New_Article( $url );
@@ -272,8 +282,19 @@ class API
 
 			// get article details for frontend
 			$article = new Article_Block( get_post( $post_id ) );
-			
+
 			$res->add_data( 'article', $article->package() );
+
+			// update metadata for frontend
+			$total_articles 		= Loa()->helper::get_total_article_count( true );
+			$total_read_articles 	= Loa()->helper::get_read_articles( true );
+			
+			$meta = compact( 
+				'total_articles', 
+				'total_read_articles', 
+			);
+
+			$res->add_data( 'meta', $meta );
 			
 		} catch( Throwable $e ) {
 			$res->set_error( $e->getMessage() );
