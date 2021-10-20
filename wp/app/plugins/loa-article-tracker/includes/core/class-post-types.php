@@ -1,13 +1,13 @@
 <?php
 
 
-namespace Loa\Controller;
+namespace Loa\Core;
 
 
 defined( 'ABSPATH' ) || exit;
 
 
-class Core
+class Post_Types
 {
     const POST_TYPE = 'article';
     const TAXONOMY  = 'article-cat';

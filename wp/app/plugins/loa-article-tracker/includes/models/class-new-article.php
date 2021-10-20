@@ -133,16 +133,16 @@ class New_Article
 	{
 		$articles = get_posts(
 			[
-				'post_type'		=> Loa()->core::POST_TYPE,
-				'post_status'	=> 'any',
-				'meta_key'		=> 'article_url',
-				'meta_value'	=> $this->url
+				'post_type'			=> Loa()->post_types::POST_TYPE,
+				'post_status'		=> 'any',
+				'posts_per_page'	=> -1,
+				'meta_key'			=> 'article_url',
+				'meta_value'		=> $this->url
 			]
 		);
 
+		// double-check that field matches
 		foreach( $articles as $article ) {
-
-			// double-check that field matches
 			if( $this->url === get_field( 'article_url', $article->ID ) ) {
 				$this->post_id 		= $article->ID;
 				$this->title 		= $article->post_title;
@@ -153,7 +153,7 @@ class New_Article
 
 				$this->tags	= wp_get_object_terms( 
 					$article->ID, 
-					Loa()->core::TAXONOMY, 
+					Loa()->post_types::TAXONOMY, 
 					[
 						'fields' => 'tt_ids'
 					]
@@ -179,7 +179,7 @@ class New_Article
 			'post_content'	=> $this->description,
 			'post_status'	=> 'publish',
 			'post_title' 	=> $this->title,
-			'post_type'		=> Loa()->core::POST_TYPE,
+			'post_type'		=> Loa()->post_types::POST_TYPE,
 		];
 
 		// add movie as post
@@ -192,7 +192,11 @@ class New_Article
 
 		// assign genres
 		if( !empty( $this->tags ) ) {
-			wp_set_object_terms( $this->post_id, $this->tags, Loa()->core::TAXONOMY );
+			wp_set_object_terms( 
+				$this->post_id, 
+				$this->tags, 
+				Loa()->post_types::TAXONOMY 
+			);
 		}
 
 		// return to post ID to endpoint

@@ -27,10 +27,10 @@ class Loa
 
     // subclasses
     public $helper      = null;
-    public $core        = null;
+    public $post_types  = null;
+    public $update_time = null;
     public $admin       = null;
     public $api         = null;
-    public $endpoint    = null;
     
 
 	public static function _instance(): self
@@ -61,17 +61,26 @@ class Loa
 
     private function includes(): void
     {
+        // abstracts
+        require_once( self::$plugin_path_inc . 'abstracts/abstract-class-endpoint.php' );
+
         // models
         require_once( self::$plugin_path_inc . 'models/class-api-response.php' );        
         require_once( self::$plugin_path_inc . 'models/class-article-block.php' );
         require_once( self::$plugin_path_inc . 'models/class-new-article.php' );
 
+        // core
+        require_once( self::$plugin_path_inc . 'core/class-helper.php' );
+        require_once( self::$plugin_path_inc . 'core/class-post-types.php' );
+        require_once( self::$plugin_path_inc . 'core/class-update-time.php' );
+
         // controllers
-        require_once( self::$plugin_path_inc . 'controllers/class-helper.php' );
-        require_once( self::$plugin_path_inc . 'controllers/class-core.php' );
-        require_once( self::$plugin_path_inc . 'controllers/class-admin.php' );
         require_once( self::$plugin_path_inc . 'controllers/class-api.php' );
-        require_once( self::$plugin_path_inc . 'controllers/class-endpoint.php' );
+
+        // admin-only
+        if( is_admin() ) {
+            require_once( self::$plugin_path_inc . 'controllers/class-admin.php' );
+        }        
     }
 
 
@@ -83,11 +92,14 @@ class Loa
 
     public function load_classes(): void
     {
-        $this->helper   = new Loa\Controller\Helper();
-        $this->core     = new Loa\Controller\Core();
-        $this->admin    = new Loa\Controller\Admin();
-        $this->api      = new Loa\Controller\API();
-        $this->endpoint = new Loa\Controller\Endpoint();
+        $this->helper       = new Loa\Core\Helper();
+        $this->post_types   = new Loa\Core\Post_Types();
+        $this->last_updated = new Loa\Core\Last_Updated();
+        $this->api          = new Loa\Controller\API();
+
+        if( is_admin() ) {
+            $this->admin = new Loa\Controller\Admin();
+        }
     }
 }
 
@@ -95,6 +107,5 @@ class Loa
 function Loa() {
     return Loa::_instance();
 }
-
 
 Loa();

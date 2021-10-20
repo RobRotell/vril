@@ -2,9 +2,8 @@
 
 declare( strict_types = 1 );
 
-namespace Loa\Controller;
 
-
+namespace Loa\Core;
 
 
 use DOMDocument;
@@ -47,7 +46,7 @@ class Helper
 	public static function is_tag_id( int $arg ): bool
 	{
 		if( !empty( $arg ) ) {
-			$match = get_term( $arg, Loa()->core::TAXONOMY );
+			$match = get_term( $arg, Loa()->post_types::TAXONOMY );
 
 			return is_a( $match, 'WP_Term' );
 		}
@@ -141,7 +140,7 @@ class Helper
 	 */
 	public static function get_total_article_count()
 	{
-		$posts_by_status = wp_count_posts( Loa()->core::POST_TYPE );
+		$posts_by_status = wp_count_posts( Loa()->post_types::POST_TYPE );
 
 		return $posts_by_status->publish;
 	}
@@ -157,7 +156,7 @@ class Helper
 	{
 		$articles = get_posts(
 			[
-				'post_type' 		=> Loa()->core::POST_TYPE,
+				'post_type' 		=> Loa()->post_types::POST_TYPE,
 				'posts_per_page'	=> -1,
 				'meta_compare'		=> '=',
 				'meta_key'			=> 'article_read',
@@ -184,7 +183,7 @@ class Helper
 	{
 		$articles = get_posts(
 			[
-				'post_type' 		=> Loa()->core::POST_TYPE,
+				'post_type' 		=> Loa()->post_types::POST_TYPE,
 				'posts_per_page'	=> -1,
 				'meta_compare'		=> '!=',
 				'meta_key'			=> 'article_read',
@@ -198,6 +197,22 @@ class Helper
 		} else {
 			return $articles;
 		}
+	}
+	
+
+	/**
+	 * Clean up tags for new articles
+	 * 
+	 * @internal 		We'll handle actually validating tags in New_Article class
+	 *
+	 * @param	mixed	$tags 	Tags
+	 * @return 	array 			Array of tag IDs
+	 */
+	public static function clean_tags( $tags = '' )
+	{
+		$tags = Vril_Utility::convert_to_array( $tags );
+		
+		return array_unique( array_values( $tags ) );
 	}	
 
 }

@@ -3,6 +3,7 @@
 
 namespace Loa\Model;
 
+
 use Vril_Utility;
 use WP_Post;
 
@@ -12,15 +13,15 @@ defined( 'ABSPATH' ) || exit;
 
 class Article_Block
 {
-    public $id             = null;
-    public $title          = '';
+    public $id          = null;
+    public $title       = '';
 
-    public $url            = '';
+    public $url         = '';
 
-    public $is_read        = false;
-    public $is_favorite    = false;
+    public $is_read     = false;
+    public $is_favorite = false;
     
-    public $tags           = [];
+    public $tags        = [];
 
 
     public function __construct( WP_Post $post )
@@ -54,7 +55,7 @@ class Article_Block
     {
         $tags = wp_get_object_terms( 
             $this->id, 
-            Loa()->core::TAXONOMY, 
+            Loa()->post_types::TAXONOMY, 
             [ 
                 'fields' => 'id=>name' 
             ] 
