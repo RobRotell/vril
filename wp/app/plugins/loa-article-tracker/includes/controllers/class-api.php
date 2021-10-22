@@ -39,13 +39,15 @@ class API
 	 */
 	public function load_endpoints()
 	{
-		require_once( Loa()::$plugin_path_inc . '/endpoints/class-get-articles.php' );
 		require_once( Loa()::$plugin_path_inc . '/endpoints/class-add-article.php' );
+		require_once( Loa()::$plugin_path_inc . '/endpoints/class-get-articles.php' );
+		require_once( Loa()::$plugin_path_inc . '/endpoints/class-create-auth-token.php' );
 		require_once( Loa()::$plugin_path_inc . '/endpoints/class-get-tags.php' );
 		require_once( Loa()::$plugin_path_inc . '/endpoints/class-update-article.php' );
 
-		$this->endpoints['get-articles'] 	= new \Loa\Endpoints\Get_Articles();
 		$this->endpoints['add-article'] 	= new \Loa\Endpoints\Add_Article();
+		$this->endpoints['get-articles'] 	= new \Loa\Endpoints\Get_Articles();
+		$this->endpoints['get-auth-token'] 	= new \Loa\Endpoints\Create_Auth_Token();
 		$this->endpoints['get-tags'] 		= new \Loa\Endpoints\Get_Tags();
 		$this->endpoints['update-article'] 	= new \Loa\Endpoints\Update_Article();
 	}
@@ -105,26 +107,17 @@ class API
 	/**
 	 * Confirms user is authorized
 	 * 
-	 * @see rest_send_cors_headers
 	 *
-	 * @param	string	$origin 	Http origin
-	 * @return 	mixed 				If request is from Chrome extension, return false 
+	 * @param	string	$username 		Username
+	 * @param 	string 	$app_password 	Application password
+	 * 
+	 * @return 	bool 					True, if authorized
 	 */
-	public static function check_auth( $origin )
+	public static function user_is_authorized( string $username, string $app_password ): bool
 	{
-		return true;
+		$result = wp_authenticate_application_password( null, $username, $app_password );
 
-		header( 'x-vril-api: loa' );
-
-		if( false !== strpos( $origin, 'chrome-extension' ) ) {
-			header( 'Access-Control-Allow-Methods: OPTIONS, GET, POST, PUT, PATCH, DELETE' );
-			header( 'Access-Control-Allow-Credentials: true' );
-			header( 'Vary: Origin', false );
-						
-			$origin = false;
-		} 
-
-		return $origin;
+		return ( is_a( $result, 'WP_User' ) );
 	}	
 
 }
