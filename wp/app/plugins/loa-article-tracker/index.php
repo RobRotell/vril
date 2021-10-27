@@ -31,6 +31,7 @@ class Loa
     public $update_time = null;
     public $admin       = null;
     public $api         = null;
+    public $auth_tokens = null;
     
 
 	public static function _instance(): self
@@ -76,6 +77,7 @@ class Loa
 
         // controllers
         require_once( self::$plugin_path_inc . 'controllers/class-api.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-auth-tokens.php' );
 
         // admin-only
         if( is_admin() ) {
@@ -96,6 +98,7 @@ class Loa
         $this->post_types   = new Loa\Core\Post_Types();
         $this->last_updated = new Loa\Core\Last_Updated();
         $this->api          = new Loa\Controller\API();
+        $this->auth_tokens  = new Loa\Controller\Auth_Tokens();
 
         if( is_admin() ) {
             $this->admin = new Loa\Controller\Admin();

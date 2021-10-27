@@ -40,16 +40,18 @@ class API
 	public function load_endpoints()
 	{
 		require_once( Loa()::$plugin_path_inc . '/endpoints/class-add-article.php' );
-		require_once( Loa()::$plugin_path_inc . '/endpoints/class-get-articles.php' );
 		require_once( Loa()::$plugin_path_inc . '/endpoints/class-create-auth-token.php' );
+		require_once( Loa()::$plugin_path_inc . '/endpoints/class-get-articles.php' );
 		require_once( Loa()::$plugin_path_inc . '/endpoints/class-get-tags.php' );
 		require_once( Loa()::$plugin_path_inc . '/endpoints/class-update-article.php' );
+		require_once( Loa()::$plugin_path_inc . '/endpoints/class-validate-auth-token.php' );
 
-		$this->endpoints['add-article'] 	= new \Loa\Endpoints\Add_Article();
-		$this->endpoints['get-articles'] 	= new \Loa\Endpoints\Get_Articles();
-		$this->endpoints['get-auth-token'] 	= new \Loa\Endpoints\Create_Auth_Token();
-		$this->endpoints['get-tags'] 		= new \Loa\Endpoints\Get_Tags();
-		$this->endpoints['update-article'] 	= new \Loa\Endpoints\Update_Article();
+		$this->endpoints['add-article'] 		= new \Loa\Endpoints\Add_Article();
+		$this->endpoints['create-auth-token'] 	= new \Loa\Endpoints\Create_Auth_Token();
+		$this->endpoints['get-articles'] 		= new \Loa\Endpoints\Get_Articles();
+		$this->endpoints['get-tags'] 			= new \Loa\Endpoints\Get_Tags();
+		$this->endpoints['update-article'] 		= new \Loa\Endpoints\Update_Article();
+		$this->endpoints['validate-auth-token'] = new \Loa\Endpoints\Validate_Auth_Token();
 	}
 
 
