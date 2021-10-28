@@ -42,17 +42,22 @@ class Api_Response
 	 * Set error state for response object
 	 *
 	 * @param	string	$err 			Error message
-	 * @param 	int 	$response_code 	HTTP response code
+	 * @param 	mixed 	$response_code 	HTTP response code
 	 * 
 	 * @return	self 					Response object
 	 */
-	public function set_error( string $err, int $response_code = 500 ): self
+	public function set_error( string $err, $response_code = 0 ): self
 	{
 		$this->error	= true;
 		$this->success	= false;
 
 		// clear out any preexisting data
 		$this->data = [];
+
+		$response_code = absint( $response_code );
+		if( empty( $response_code ) ) {
+			$response_code = 500;
+		}
 
 		$this
 			->add_data_key( 'error' )

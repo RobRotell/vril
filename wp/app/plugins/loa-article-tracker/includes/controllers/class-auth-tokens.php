@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
 
 class Auth_Tokens
 {
-	private const APP_NAME = 'loa_v2';
+	private const APP_NAME = 'loa_v3';
 
 
 	/**

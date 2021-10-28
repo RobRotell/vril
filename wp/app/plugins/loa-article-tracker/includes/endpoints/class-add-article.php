@@ -14,57 +14,58 @@ use WP_Query;
 use Loa\Controller\API as API;
 use Loa\Model\New_Article as New_Article;
 use Loa\Model\Article_Block as Article_Block;
+use Loa\Abstracts\Endpoint as Endpoint;
 
 
 defined( 'ABSPATH' ) || exit;
 
 
-class Add_Article extends \Loa\Abstracts\Endpoint
+class Add_Article extends Endpoint
 {
-	public $route = 'add-article';
+	public $route 	= 'articles';
+	public $method 	= WP_REST_Server::CREATABLE;
 
 
 	/**
-	 * Registers API route
+	 * Handle permission check for endpoint
 	 *
-	 * @return 	void
+	 * @return 	bool 	True, if user can edit posts
 	 */
-	public function register_route()
+	public function check_permission( WP_REST_Request $request ): bool
 	{
-		register_rest_route(
-			API::NAMESPACE,
-			$this->get_route(),
-			[
-				'callback'				=> [ $this, 'handle_request' ],
-				'methods'				=> WP_REST_Server::EDITABLE,
-				'permission_callback'	=> [ 'API', 'check_auth' ],
-				'args' 					=> [
-					'auth'	=> [
-						'required'			=> true,
-						'type'				=> 'string',
-						'sanitize_callback' => [ 'Vril_Utility', 'sanitize_var' ],
-					],
-					'url'	=> [
-						'required'			=> true,
-						'type'				=> 'string',
-						'sanitize_callback' => 'esc_url_raw',
-					],
-					'tags'	=> [
-						'default'			=> null,
-						'type'				=> 'string',
-						'sanitize_callback'	=> [ Loa()->helper, 'clean_tags' ],
-					],
-					'read'	=> [
-						'default'			=> false,
-						'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
-					],
-					'favorite' => [
-						'default'			=> false,
-						'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
-					]
-				]
+		$current_user = wp_get_current_user();
+		var_dump( $current_user );
+
+		return $current_user->has_cap( 'edit_posts' );
+	}	
+
+
+	/**
+	 * Establish endpoint arguments
+	 *
+	 * @return 	array 	Args
+	 */
+	public function get_route_args(): array
+	{
+		return [
+			'url'	=> [
+				'required'			=> true,
+				'sanitize_callback' => 'esc_url_raw',
+			],
+			'tags'	=> [
+				'default'			=> [],
+				'type'				=> 'array',
+				'sanitize_callback'	=> [ Loa()->helper, 'clean_tags' ],
+			],
+			'read'	=> [
+				'default'			=> false,
+				'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
+			],
+			'favorite' => [
+				'default'			=> false,
+				'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
 			]
-		);
+		];
 	}
 
 

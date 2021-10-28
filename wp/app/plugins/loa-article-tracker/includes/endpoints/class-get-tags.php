@@ -5,41 +5,44 @@ namespace Loa\Endpoints;
 
 
 use Throwable;
+use Exception;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
-use WP_Query;
 
 
 use Loa\Controller\API as API;
-use Loa\Model\New_Article as New_Article;
-use Loa\Model\Article_Block as Article_Block;
+use Loa\Abstracts\Endpoint as Endpoint;
 
 
 defined( 'ABSPATH' ) || exit;
 
 
-class Get_Tags extends \Loa\Abstracts\Endpoint
+class Get_Tags extends Endpoint
 {
-	public $route = 'get-tags';
+	public $route	= 'tags';
+	public $method	= WP_REST_Server::READABLE;
 
 
 	/**
-	 * Registers API route
+	 * Handle permission check for endpoint
 	 *
-	 * @return 	void
+	 * @return 	bool 	True; endpoint is public
 	 */
-	public function register_route()
+	public function check_permission( WP_REST_Request $request ): bool
 	{
-		register_rest_route(
-			API::NAMESPACE,
-			$this->get_route(),
-			[
-				'callback'				=> [ $this, 'handle_request' ],
-				'methods'				=> WP_REST_Server::READABLE,
-				'permission_callback' 	=> '__return_true',
-			]
-		);
+		return true;
+	}
+
+
+	/**
+	 * Establish endpoint arguments
+	 *
+	 * @return 	array 	Empty array (no args)
+	 */
+	public function get_route_args(): array
+	{
+		return [];
 	}
 
 
@@ -69,10 +72,9 @@ class Get_Tags extends \Loa\Abstracts\Endpoint
 			}
 			$res->add_data( 'tags', $tags );
 
-			$total_count = count( $tags );
-			$last_updated = Loa()->last_updated->get_timestamp();
-
-			$meta = compact( 'last_updated', 'total_count' );
+			$tag_count		= count( $tags );
+			$last_updated	= Loa()->last_updated->get_timestamp();
+			$meta 			= compact( 'last_updated', 'tag_count' );
 
 			$res->add_data( 'meta', $meta );
 

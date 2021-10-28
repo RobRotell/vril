@@ -13,64 +13,68 @@ use WP_Query;
 
 use Loa\Controller\API as API;
 use Loa\Model\Article_Block as Article_Block;
+use Loa\Abstracts\Endpoint as Endpoint;
 
 
 defined( 'ABSPATH' ) || exit;
 
 
-class Get_Articles extends \Loa\Abstracts\Endpoint
+class Get_Articles extends Endpoint
 {
-	public $route = 'get-articles';
+	public $route	= 'articles';
+	public $method	= WP_REST_Server::READABLE;
 
 
 	/**
-	 * Registers API route
+	 * Handle permission check for endpoint
 	 *
-	 * @return 	void
+	 * @return 	bool 	True; endpoint is public
 	 */
-	public function register_route()
+	public function check_permission( WP_REST_Request $request ): bool
 	{
-		register_rest_route(
-			API::NAMESPACE,
-			$this->get_route(),
-			[
-				'callback'				=> [ $this, 'handle_request' ],
-				'methods'				=> WP_REST_Server::READABLE,
-				'permission_callback'	=> '__return_true',
-				'args'		=> [
-					'page'	=> [
-						'default'			=> 1,
-						'type'				=> 'string',
-						'sanitize_callback'	=> 'absint',
-					],
-					'count'	=> [
-						'default'			=> 50,
-						'type'				=> 'string',
-						'sanitize_callback'	=> 'absint',
-					],
-					'tag'	=> [
-						'default'			=> 0,
-						'type'				=> 'string',
-						'sanitize_callback'	=> 'absint', // @todo — could be array
-					],
-					'keyword' => [
-						'default'			=> '',
-						'type'				=> 'string',
-						'sanitize_callback'	=> [ 'Vril_Utility', 'sanitize_var' ],
-					],
-					'read' => [
-						'default'			=> false,
-						'type'				=> 'string',
-						'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
-					],
-					'favorite' => [
-						'default'			=> false,
-						'type'				=> 'string',
-						'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
-					],					
-				]
-			]
-		);
+		return true;
+	}
+
+
+	/**
+	 * Establish endpoint arguments
+	 *
+	 * @return 	array 	Empty array (no args)
+	 */
+	public function get_route_args(): array
+	{
+		return [
+			'page'	=> [
+				'default'			=> 1,
+				'type'				=> 'string',
+				'sanitize_callback'	=> 'absint',
+			],
+			'count'	=> [
+				'default'			=> 50,
+				'type'				=> 'string',
+				'sanitize_callback'	=> 'absint',
+			],
+			'tag'	=> [
+				'default'			=> 0,
+				'type'				=> 'string',
+				'sanitize_callback'	=> 'absint', // @todo — could be array
+			],
+			'keyword' => [
+				'default'			=> '',
+				'type'				=> 'string',
+				'sanitize_callback'	=> [ 'Vril_Utility', 'sanitize_var' ],
+			],
+			'read' => [
+				'default'			=> false,
+				'type'				=> 'string',
+				'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
+			],
+			'favorite' => [
+				'default'			=> false,
+				'type'				=> 'string',
+				'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
+			],					
+		];
 	}
 
 

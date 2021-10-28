@@ -7,6 +7,7 @@ namespace Loa\Abstracts;
 use WP_REST_Controller;
 use WP_REST_Response;
 use WP_REST_Request;
+use WP_Error;
 
 use Loa\Controller\API as API;
 use Loa\Model\API_Response as API_Response;
@@ -19,6 +20,7 @@ defined( 'ABSPATH' ) || exit;
 abstract class Endpoint extends WP_REST_Controller
 {
 	public $route;
+	public $method;
 
 
 	/**
@@ -48,16 +50,44 @@ abstract class Endpoint extends WP_REST_Controller
 	 *
 	 * @return 	void
 	 */
-	abstract public function register_route();
+	public function register_route() 
+	{
+		register_rest_route(
+			API::NAMESPACE,
+			$this->get_route(),
+			[
+				'methods'				=> $this->method,
+				'args'					=> $this->get_route_args(),
+				'permission_callback'	=> [ $this, 'check_permission' ],
+				'callback' 				=> [ $this, 'handle_request' ],
+			]
+		);
+	}
 
 
 	/**
-	 * Handle endpoint request
+	 * Handle permission check for endpoint
+	 *
+	 * @return 	bool|WP_Error 	True, if permitted; otherwise false or error
+	 */
+	abstract public function check_permission( WP_REST_Request $request ): bool|WP_Error;
+
+
+	/**
+	 * Establish endpoint arguments
+	 *
+	 * @return 	array 	Array of endpoint args
+	 */
+	abstract public function get_route_args(): array;
+
+
+	/**
+	 * Handle permission check
 	 *
 	 * @param	WP_REST_Request 	$req	API request
 	 * @return 	WP_REST_Response			API response
 	 */
-	abstract public function handle_request( WP_REST_Request $req ): WP_REST_Response;	
+	abstract public function handle_request( WP_REST_Request $req ): WP_REST_Response;
 
 
 	/**
@@ -67,7 +97,7 @@ abstract class Endpoint extends WP_REST_Controller
 	 */
 	public function get_route()
 	{
-		return sprintf( '/%s', $this->route );
+		return $this->route;
 	}
 
 
@@ -98,7 +128,7 @@ abstract class Endpoint extends WP_REST_Controller
 	{
 		$path = sprintf( '%s/%s', API::NAMESPACE, $this->route );
 
-		return get_rest_url( null, 'bob' );
+		return get_rest_url( null, $path );
 	}
 
 }

@@ -15,52 +15,53 @@ use WP_Query;
 use Loa\Controller\API as API;
 use Loa\Model\New_Article as New_Article;
 use Loa\Model\Article_Block as Article_Block;
+use Loa\Abstracts\Endpoint as Endpoint;
 
 
 defined( 'ABSPATH' ) || exit;
 
 
-class Update_Article extends \Loa\Abstracts\Endpoint
+class Update_Article extends Endpoint
 {
-	public $route = 'update-article';
+	public $route 	= 'articles/(?P<id>[\d]+)';
+	public $method 	= WP_REST_Server::EDITABLE;
 
 
 	/**
-	 * Registers API route
+	 * Handle permission check for endpoint
 	 *
-	 * @return 	void
+	 * @return 	bool 	True, if user can edit posts
 	 */
-	public function register_route()
+	public function check_permission( WP_REST_Request $request ): bool
 	{
-		register_rest_route(
-			API::NAMESPACE,
-			$this->get_route(),
-			[
-				'callback'				=> [ $this, 'handle_request' ],
-				'methods'				=> WP_REST_Server::EDITABLE,
-				'permission_callback'	=> [ 'API', 'check_auth' ],
-				'args' 					=> [
-					'auth'	=> [
-						'required'			=> true,
-						'type'				=> 'string',
-						'sanitize_callback' => [ 'Vril_Utility', 'sanitize_var' ],
-					],
-					'id'	=> [
-						'required'			=> true,
-						'type'				=> 'string',
-						'sanitize_callback' => 'absint',
-					],					
-					'read'	=> [
-						'default'			=> null,
-						'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
-					],
-					'favorite' => [
-						'default'			=> null,
-						'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
-					]
-				]
+		$current_user = wp_get_current_user();
+
+		return $current_user->has_cap( 'edit_posts' );
+	}	
+
+
+	/**
+	 * Establish endpoint arguments
+	 *
+	 * @return 	array 	Args
+	 */
+	public function get_route_args(): array
+	{
+		return [
+			'id'	=> [
+				'required'			=> true,
+				'type'				=> 'string',
+				'sanitize_callback' => 'absint',
+			],					
+			'read'	=> [
+				'default'			=> null,
+				'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
+			],
+			'favorite' => [
+				'default'			=> null,
+				'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
 			]
-		);
+		];
 	}
 
 
