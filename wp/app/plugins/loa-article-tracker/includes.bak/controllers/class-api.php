@@ -18,7 +18,6 @@ class API
 	{
 		$this->add_wp_hooks();
 		$this->load_endpoints();
-		$this->create_endpoints();
 	}
 
 
@@ -29,44 +28,30 @@ class API
 	 */
 	private function add_wp_hooks()
 	{
-		add_filter( 'vril_whitelist_rest_route', [ $this, 'whitelist_endpoints'], 10, 2 );
 		add_filter( 'http_origin', [ $this, 'extension_origin_fix' ] );
 	}	
 
 
 	/**
-	 * Load includes for endpoints
+	 * Check if current request is a REST request
 	 *
 	 * @return 	void
 	 */
-	private function load_endpoints(): void
+	public function load_endpoints()
 	{
-		require_once( Loa()::$plugin_path_inc . '/endpoints/class-get-tags.php' );
-
-		require_once( Loa()::$plugin_path_inc . '/endpoints/class-get-articles.php' );
 		require_once( Loa()::$plugin_path_inc . '/endpoints/class-add-article.php' );
-		require_once( Loa()::$plugin_path_inc . '/endpoints/class-update-article.php' );
-
-		require_once( Loa()::$plugin_path_inc . '/endpoints/class-validate-auth-token.php' );
 		require_once( Loa()::$plugin_path_inc . '/endpoints/class-create-auth-token.php' );
-	}
+		require_once( Loa()::$plugin_path_inc . '/endpoints/class-get-articles.php' );
+		require_once( Loa()::$plugin_path_inc . '/endpoints/class-get-tags.php' );
+		require_once( Loa()::$plugin_path_inc . '/endpoints/class-update-article.php' );
+		require_once( Loa()::$plugin_path_inc . '/endpoints/class-validate-auth-token.php' );
 
-
-	/**
-	 * Create instances for endpoints
-	 *
-	 * @return 	void
-	 */
-	private function create_endpoints(): void
-	{
-		$this->endpoints['get-tags']			= new \Loa\Endpoints\Get_Tags();
-		
-		$this->endpoints['get-articles']		= new \Loa\Endpoints\Get_Articles();
-		$this->endpoints['add-article']			= new \Loa\Endpoints\Add_Article();
-		$this->endpoints['update-article']		= new \Loa\Endpoints\Update_Article();
-		
-		$this->endpoints['validate-auth-token'] = new \Loa\Endpoints\Validate_Auth_Token();
-		$this->endpoints['create-auth-token'] 	= new \Loa\Endpoints\Create_Auth_Token();
+		/* $this->endpoints['add-article'] 		= new \Loa\Endpoints\Add_Article();
+		$this->endpoints['create-auth-token'] 	= new \Loa\Endpoints\Create_Auth_Token(); */
+		$this->endpoints['get-articles'] 		= new \Loa\Endpoints\Get_Articles();
+		// $this->endpoints['get-tags'] 			= new \Loa\Endpoints\Get_Tags();
+		// $this->endpoints['update-article'] 		= new \Loa\Endpoints\Update_Article();
+		// $this->endpoints['validate-auth-token'] = new \Loa\Endpoints\Validate_Auth_Token();
 	}
 
 
@@ -134,25 +119,7 @@ class API
 	{
 		$result = wp_authenticate_application_password( null, $username, $app_password );
 
-		return ( is_a( $result, 'WP_User' ) && 0 !== $result->get( 'id' ) );
+		return ( is_a( $result, 'WP_User' ) );
 	}	
-
-
-	/**
-	 * Whitelist endpoints
-	 *
-	 * @param	bool 	$status 	True, if route is whitelisted
-	 * @param 	string 	$route 		Route name
-	 * 
-	 * @return 	bool 				True, if route is whitelisted
-	 */
-	public function whitelist_endpoints( bool $status, string $route ): bool
-	{
-		if( str_contains( $route, self::NAMESPACE ) ) {
-			$status = true;
-		}
-
-		return $status;
-	}
 
 }

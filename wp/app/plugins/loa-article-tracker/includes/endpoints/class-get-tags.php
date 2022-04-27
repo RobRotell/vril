@@ -58,30 +58,39 @@ class Get_Tags extends Endpoint
 		$res = $this->create_response_obj( 'meta', 'tags' );
 
 		try {
-			$tax_query = [
-				'hide_empty'	=> false,
-				'taxonomy'		=> Loa()->post_types::TAXONOMY,
-			];
+			// check for transient data
+			$transient = Loa()->transients::get_transient( 'get_tags' );
 
-			$tags = [];
-			foreach( get_terms( $tax_query ) as $term ) {
-				$tags[] = [
-					'id' 	=> $term->term_taxonomy_id,
-					'name' 	=> $term->name,
+			[ 'tags' => $tags, 'meta' => $meta ] = $transient;
+
+			if( empty( $data ) || empty( $meta ) ) {
+				$tax_query = [
+					'hide_empty'	=> false,
+					'taxonomy'		=> Loa()->post_types::TAXONOMY,
 				];
+	
+				$tags = [];
+				foreach( get_terms( $tax_query ) as $term ) {
+					$tags[] = [
+						'id' 	=> $term->term_taxonomy_id,
+						'name' 	=> $term->name,
+					];
+				}
+	
+				$tag_count		= count( $tags );
+				$last_updated	= Loa()->last_updated->get_timestamp();
+				$meta 			= compact( 'last_updated', 'tag_count' );
+
+				Loa()->transients::set_transient( 'get_tags', null, compact( 'tags', 'meta' ) );
 			}
+
 			$res->add_data( 'tags', $tags );
-
-			$tag_count		= count( $tags );
-			$last_updated	= Loa()->last_updated->get_timestamp();
-			$meta 			= compact( 'last_updated', 'tag_count' );
-
 			$res->add_data( 'meta', $meta );
 
 		} catch( Throwable $e ) {
 			$res->set_error( $e->getMessage() );
 		}
-
+		
 		return rest_ensure_response( $res->package() );			
 	}
 

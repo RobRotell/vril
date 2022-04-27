@@ -131,39 +131,48 @@ class Get_Articles extends Endpoint
 				];
 			}
 
-			$query = new WP_Query( $query_args );
+			// check for transient data
+			$transient = Loa()->transients::get_transient( 'get_articles', $query_args );
 
-			// extract specific data from article posts
-			$articles = [];
-			foreach( $query->posts as $post ) {
-				$article	= new Article_Block( $post );
-				$articles[] = $article->package();
+			[ 'articles' => $articles ] = $transient;
 
-				unset( $article );
+			if( empty( $articles ) ) {
+				$query = new WP_Query( $query_args );
+	
+				// extract specific data from article posts
+				$articles = [];
+				foreach( $query->posts as $post ) {
+					$article	= new Article_Block( $post );
+					$articles[] = $article->package();
+	
+					unset( $article );
+				}
+
+				Loa()->transients::set_transient( 'get_articles', $query_args, compact( 'articles' ) );
 			}
+
 			$res->add_data( 'articles', $articles );
 
 			// additional metadata for frontend
-			// $last_updated			= Loa()->last_updated->get_timestamp();
-			// $page_size				= count( $articles );
-			// $total_articles			= Loa()->helper::get_unread_articles( true );
-			// $total_pages			= ceil( $total_articles / $count );	
-			// $page_index				= ( $total_pages > $page ) ? $page : $total_pages;
-			// $total_read_articles	= Loa()->helper::get_read_articles( true );
+			$last_updated			= Loa()->last_updated->get_timestamp();
+			$page_size				= count( $articles );
+			$total_articles			= Loa()->helper::get_unread_articles( true );
+			$total_pages			= ceil( $total_articles / $count );	
+			$page_index				= ( $total_pages > $page ) ? $page : $total_pages;
+			$total_read_articles	= Loa()->helper::get_read_articles( true );
 			
-			// $meta = compact( 
-			// 	'last_updated', 
-			// 	'page_index', 
-			// 	'page_size', 
-			// 	'total_pages',
-			// 	'total_articles', 
-			// 	'total_read_articles'
-			// );
+			$meta = compact( 
+				'last_updated', 
+				'page_index', 
+				'page_size', 
+				'total_pages',
+				'total_articles', 
+				'total_read_articles'
+			);
 
-			// $res->add_data( 'meta', $meta );
+			$res->add_data( 'meta', $meta );
 
 		} catch( Throwable $e ) {
-			var_dump( $e );
 			$res->set_error( $e->getMessage() );
 		}
 

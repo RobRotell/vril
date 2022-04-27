@@ -14,57 +14,57 @@ use WP_Query;
 use Loa\Controller\API as API;
 use Loa\Model\New_Article as New_Article;
 use Loa\Model\Article_Block as Article_Block;
-use Loa\Abstracts\Endpoint as Endpoint;
 
 
 defined( 'ABSPATH' ) || exit;
 
 
-class Add_Article extends Endpoint
+class Add_Article extends \Loa\Abstracts\Endpoint
 {
-	public $route 	= 'articles';
-	public $method 	= WP_REST_Server::CREATABLE;
+	public $route = 'articles';
 
 
 	/**
-	 * Handle permission check for endpoint
+	 * Registers API route
 	 *
-	 * @return 	bool 	True, if user can edit posts
+	 * @return 	void
 	 */
-	public function check_permission( WP_REST_Request $request ): bool
+	public function register_route()
 	{
-		$current_user = wp_get_current_user();
-
-		return $current_user->has_cap( 'edit_posts' );
-	}	
-
-
-	/**
-	 * Establish endpoint arguments
-	 *
-	 * @return 	array 	Args
-	 */
-	public function get_route_args(): array
-	{
-		return [
-			'url'	=> [
-				'required'			=> true,
-				'sanitize_callback' => 'esc_url_raw',
-			],
-			'tags'	=> [
-				'default'			=> [],
-				'type'				=> 'array',
-				'sanitize_callback'	=> [ Loa()->helper, 'clean_tags' ],
-			],
-			'read'	=> [
-				'default'			=> false,
-				'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
-			],
-			'favorite' => [
-				'default'			=> false,
-				'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
+		register_rest_route(
+			API::NAMESPACE,
+			$this->get_route(),
+			[
+				'callback'				=> [ $this, 'handle_request' ],
+				'methods'				=> WP_REST_Server::EDITABLE,
+				'permission_callback'	=> [ 'API', 'check_auth' ],
+				'args' 					=> [
+					'auth'	=> [
+						'required'			=> true,
+						'type'				=> 'string',
+						'sanitize_callback' => [ 'Vril_Utility', 'sanitize_var' ],
+					],
+					'url'	=> [
+						'required'			=> true,
+						'type'				=> 'string',
+						'sanitize_callback' => 'esc_url_raw',
+					],
+					'tags'	=> [
+						'default'			=> null,
+						'type'				=> 'string',
+						'sanitize_callback'	=> [ Loa()->helper, 'clean_tags' ],
+					],
+					'read'	=> [
+						'default'			=> false,
+						'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
+					],
+					'favorite' => [
+						'default'			=> false,
+						'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
+					]
+				]
 			]
-		];
+		);
 	}
 
 

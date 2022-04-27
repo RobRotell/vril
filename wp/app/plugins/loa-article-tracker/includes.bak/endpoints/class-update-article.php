@@ -15,54 +15,52 @@ use WP_Query;
 use Loa\Controller\API as API;
 use Loa\Model\New_Article as New_Article;
 use Loa\Model\Article_Block as Article_Block;
-use Loa\Abstracts\Endpoint as Endpoint;
 
 
 defined( 'ABSPATH' ) || exit;
 
 
-class Update_Article extends Endpoint
+class Update_Article extends \Loa\Abstracts\Endpoint
 {
-	public $route 	= 'articles/(?P<id>[\d]+)';
-	public $method 	= WP_REST_Server::EDITABLE;
+	public $route = 'articles/(?P<id>\d+)';
 
 
 	/**
-	 * Handle permission check for endpoint
+	 * Registers API route
 	 *
-	 * @return 	bool 	True, if user can edit posts
+	 * @return 	void
 	 */
-	public function check_permission( WP_REST_Request $request ): bool
+	public function register_route()
 	{
-		// username and app password should be passed via Authorization header
-		$current_user = wp_get_current_user();
-
-		return $current_user->has_cap( 'edit_posts' );
-	}	
-
-
-	/**
-	 * Establish endpoint arguments
-	 *
-	 * @return 	array 	Args
-	 */
-	public function get_route_args(): array
-	{
-		return [
-			'id'	=> [
-				'required'			=> true,
-				'type'				=> 'string',
-				'sanitize_callback' => 'absint',
-			],					
-			'read'	=> [
-				'default'			=> null,
-				'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
-			],
-			'favorite' => [
-				'default'			=> null,
-				'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
+		register_rest_route(
+			API::NAMESPACE,
+			$this->get_route(),
+			[
+				'callback'				=> [ $this, 'handle_request' ],
+				'methods'				=> WP_REST_Server::EDITABLE,
+				'permission_callback'	=> [ 'API', 'check_auth' ],
+				'args' 					=> [
+					'auth'	=> [
+						'required'			=> true,
+						'type'				=> 'string',
+						'sanitize_callback' => [ 'Vril_Utility', 'sanitize_var' ],
+					],
+					'id'	=> [
+						'required'			=> true,
+						'type'				=> 'string',
+						'sanitize_callback' => 'absint',
+					],					
+					'read'	=> [
+						'default'			=> null,
+						'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
+					],
+					'favorite' => [
+						'default'			=> null,
+						'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
+					]
+				]
 			]
-		];
+		);
 	}
 
 
@@ -97,7 +95,7 @@ class Update_Article extends Endpoint
 				update_field( 'article_read', $read, $article_id );
 	
 				// confirm that read status was correctly updated
-				if( !$read === get_field( 'article_read', $article_id ) ) {
+				if( $read !== get_field( 'article_read', $article_id ) ) {
 					throw new Exception(
 						sprintf(
 							'Failed to update read status for article (ID: "%s")',
@@ -110,9 +108,9 @@ class Update_Article extends Endpoint
 			// update favorite status
 			if( is_bool( $favorite ) ) {
 				update_field( 'article_favorite', $favorite, $article_id );
-
+	
 				// confirm that favorite status was correctly updated
-				if( !$favorite === get_field( 'article_favorite', $article_id ) ) {
+				if( $favorite !== get_field( 'article_favorite', $article_id ) ) {
 					throw new Exception(
 						sprintf(
 							'Failed to update favorite status for article (ID: "%s")',

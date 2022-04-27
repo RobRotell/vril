@@ -32,6 +32,7 @@ class Loa
     public $admin       = null;
     public $api         = null;
     public $auth_tokens = null;
+    public $transients  = null;
     
 
 	public static function _instance(): self
@@ -73,6 +74,7 @@ class Loa
         // core
         require_once( self::$plugin_path_inc . 'core/class-helper.php' );
         require_once( self::$plugin_path_inc . 'core/class-post-types.php' );
+        require_once( self::$plugin_path_inc . 'core/class-transients.php' );
         require_once( self::$plugin_path_inc . 'core/class-update-time.php' );
 
         // controllers
@@ -97,6 +99,7 @@ class Loa
         $this->helper       = new Loa\Core\Helper();
         $this->post_types   = new Loa\Core\Post_Types();
         $this->last_updated = new Loa\Core\Last_Updated();
+        $this->transients   = new Loa\Core\Transients();
         $this->api          = new Loa\Controller\API();
         $this->auth_tokens  = new Loa\Controller\Auth_Tokens();
 
