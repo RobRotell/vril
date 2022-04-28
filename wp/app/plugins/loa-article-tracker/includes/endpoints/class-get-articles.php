@@ -9,11 +9,13 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
 use WP_Query;
+use WP_Error;
 
 
 use Loa\Controller\API as API;
 use Loa\Model\Article_Block as Article_Block;
 use Loa\Abstracts\Endpoint as Endpoint;
+use Loa\Traits\Articles_Meta;
 
 
 defined( 'ABSPATH' ) || exit;
@@ -21,6 +23,9 @@ defined( 'ABSPATH' ) || exit;
 
 class Get_Articles extends Endpoint
 {
+	use Articles_Meta;
+
+
 	public $route	= 'articles';
 	public $method	= WP_REST_Server::READABLE;
 
@@ -53,6 +58,7 @@ class Get_Articles extends Endpoint
 				'default'			=> 50,
 				'type'				=> 'string',
 				'sanitize_callback'	=> 'absint',
+				'validate_callback' => [ $this, 'check_article_count' ],
 			],
 			'tag'	=> [
 				'default'			=> 0,
@@ -73,7 +79,12 @@ class Get_Articles extends Endpoint
 				'default'			=> false,
 				'type'				=> 'string',
 				'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
-			],					
+			],
+			'include_meta' => [
+				'default'			=> true,
+				'type'				=> 'string',
+				'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],				
+			]
 		];
 	}
 
@@ -92,6 +103,7 @@ class Get_Articles extends Endpoint
 		$keyword 		= $req->get_param( 'keyword' );
 		$is_read 		= $req->get_param( 'read' );
 		$is_favorite 	= $req->get_param( 'favorite' );
+		$include_meta 	= $req->get_param( 'include_meta' );
 
 		// prep response object
 		$res = $this->create_response_obj( 'meta', 'articles' );
@@ -153,30 +165,57 @@ class Get_Articles extends Endpoint
 
 			$res->add_data( 'articles', $articles );
 
-			// additional metadata for frontend
-			$last_updated			= Loa()->last_updated->get_timestamp();
-			$page_size				= count( $articles );
-			$total_articles			= Loa()->helper::get_unread_articles( true );
-			$total_pages			= ceil( $total_articles / $count );	
-			$page_index				= ( $total_pages > $page ) ? $page : $total_pages;
-			$total_read_articles	= Loa()->helper::get_read_articles( true );
-			
-			$meta = compact( 
-				'last_updated', 
-				'page_index', 
-				'page_size', 
-				'total_pages',
-				'total_articles', 
-				'total_read_articles'
-			);
+			$methods = get_class_methods( $this );
 
-			$res->add_data( 'meta', $meta );
+			// additional metadata for frontend
+			if( $include_meta ) {
+				$last_updated			= Articles_Meta::get_last_updated();
+				$total_articles			= Articles_Meta::get_article_count();
+				$total_articles_read 	= Articles_Meta::get_article_count_read();
+				$total_articles_unread 	= Articles_Meta::get_article_count_unread();
+				$total_pages			= ceil( $total_articles / $count );	
+				$page_size				= count( $articles );
+				$page_index				= ( $total_pages > $page ) ? $page : $total_pages;
+			
+				$meta = compact( 
+					'last_updated',
+					'total_articles',
+					'total_articles_read',
+					'total_articles_unread',
+					'total_pages',
+					'page_size',
+					'page_index',
+				);
+	
+				$res->add_data( 'meta', $meta );
+			}
 
 		} catch( Throwable $e ) {
 			$res->set_error( $e->getMessage() );
 		}
 
 		return rest_ensure_response( $res->package() );				
+	}
+
+
+	/**
+	 * Total article count per request cannot exceed 100
+	 *
+	 * @param	string 	$count 	Count arg for request
+	 * @return 	bool|WP_Error 	True, if valid count; otherwise, WP_Error
+	 */
+	public function check_article_count( string $count = '' )
+	{
+		$count = absint( $count );
+
+		if( 0 === $count || 100 < $count ) {
+			return new WP_Error(
+				'loa/endpoints/get-articles/invalid-count',
+				sprintf( 'Invalid article count: "%s". Count must be between 1 and 100.', $count )
+			);
+		}
+
+		return true;
 	}
 
 

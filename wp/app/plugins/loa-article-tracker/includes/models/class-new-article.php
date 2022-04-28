@@ -36,7 +36,8 @@ class New_Article
 	 */
 	public function __construct( string $url )
 	{
-		$valid_url = wp_http_validate_url( $url );
+		$valid_url = esc_url_raw( $url ); // sanitize user input
+		$valid_url = wp_http_validate_url( $valid_url ); // check if safe to fetch
 
 		if( !$valid_url ) {
 			throw new Exception( sprintf( 'Invalid URL: "%s"', $url ) );
@@ -168,6 +169,40 @@ class New_Article
 
 
 	/**
+	 * Clean URL of unneeded query params
+	 *
+	 * @return 	string 	Cleaned URL 	
+	 */
+	private function clean_url(): string
+	{
+		$url 	= $this->url;
+		$parts 	= parse_url( $url );
+
+		parse_str( $parts['query'], $query );
+		foreach( $query as $param => $value ) {
+			if( 'utm_' === substr( $param, 0, 4 ) ) {
+				unset( $query[ $param ] );
+			}
+		}
+		$parts['query'] = http_build_query( $query );
+
+		// http_build_url only available with pecl, so once we migrate to our own server ...
+		$url = sprintf( 'https://%s', $parts['host'] );
+		if( !empty( $parts['path'] ) ) {
+			$path = $parts['path'];
+
+			if( !empty( $parts['query'] ) ) {
+				$path = sprintf( '%s?%s', $path, $parts['query'] );
+			}
+
+			$url = sprintf( '%s%s', $url, $path );
+		}
+
+		return $url;
+	}
+
+
+	/**
 	 * Save article as post
 	 *
 	 * @return 	int 	Post ID
@@ -185,10 +220,15 @@ class New_Article
 		// add movie as post
 		$this->post_id = wp_insert_post( $post_data );
 
+		// remove unneeded params, etc from URL
+		$url = $this->clean_url();
+		$url_parts = parse_url( $url );
+
 		// updating ACF separately (fixes issues with meta queries down the road)
 		update_field( 'article_read', $this->read, $this->post_id );
 		update_field( 'article_favorite', $this->favorite, $this->post_id );
-		update_field( 'article_url', esc_url_raw( $this->url ), $this->post_id );
+		update_field( 'article_url', esc_url_raw( $url ), $this->post_id );
+		update_field( 'article_domain', $url_parts['host'], $this->post_id );
 
 		// assign genres
 		if( !empty( $this->tags ) ) {

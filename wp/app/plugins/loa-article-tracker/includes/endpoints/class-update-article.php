@@ -16,6 +16,7 @@ use Loa\Controller\API as API;
 use Loa\Model\New_Article as New_Article;
 use Loa\Model\Article_Block as Article_Block;
 use Loa\Abstracts\Endpoint as Endpoint;
+use Loa\Traits\Articles_Meta;
 
 
 defined( 'ABSPATH' ) || exit;
@@ -23,6 +24,8 @@ defined( 'ABSPATH' ) || exit;
 
 class Update_Article extends Endpoint
 {
+	use Articles_Meta;
+
 	public $route 	= 'articles/(?P<id>[\d]+)';
 	public $method 	= WP_REST_Server::EDITABLE;
 
@@ -61,7 +64,12 @@ class Update_Article extends Endpoint
 			'favorite' => [
 				'default'			=> null,
 				'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
-			]
+			],
+			'include_meta' => [
+				'default'			=> true,
+				'type'				=> 'string',
+				'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],				
+			],				
 		];
 	}
 
@@ -74,9 +82,10 @@ class Update_Article extends Endpoint
 	 */
 	public function handle_request( WP_Rest_Request $req ): WP_REST_Response
 	{
-		$article_id	= $req->get_param( 'id' );
-		$read		= $req->get_param( 'read' );
-		$favorite	= $req->get_param( 'favorite' );
+		$article_id		= $req->get_param( 'id' );
+		$read			= $req->get_param( 'read' );
+		$favorite		= $req->get_param( 'favorite' );
+		$include_meta 	= $req->get_param( 'include_meta' );
 
 		// prep response object
 		$res = $this->create_response_obj( 'meta', 'article' );
@@ -126,19 +135,16 @@ class Update_Article extends Endpoint
 			$article = new Article_Block( $post );
 			$article->package();
 
-			$res->add_data( 'article', $article );
-
-			// update metadata for frontend
-			// update metadata for frontend
-			$total_articles 		= Loa()->helper::get_unread_articles( true );
-			$total_read_articles 	= Loa()->helper::get_read_articles( true );
-			
-			$meta = compact( 
-				'total_articles', 
-				'total_read_articles', 
-			);
-
-			$res->add_data( 'meta', $meta );			
+			if( $include_meta ) {
+				$meta = [
+					'last_updated' 			=> Articles_Meta::get_last_updated(),
+					'total_articles' 		=> Articles_Meta::get_article_count(),
+					'total_articles_read' 	=> Articles_Meta::get_article_count_read(),
+					'total_articles_unread'	=> Articles_Meta::get_article_count_unread(),
+				];
+	
+				$res->add_data( 'meta', $meta );
+			}			
 
 		} catch( Throwable $e ) {
 			$res->set_error( $e->getMessage() );

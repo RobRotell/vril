@@ -161,7 +161,7 @@ class Helper
 				'meta_compare'		=> '=',
 				'meta_key'			=> 'article_read',
 				'meta_value'		=> '1',
-				'fields'			=> $count,
+				'fields'			=> $count ? 'ids' : '',
 			]
 		);
 
@@ -188,7 +188,7 @@ class Helper
 				'meta_compare'		=> '!=',
 				'meta_key'			=> 'article_read',
 				'meta_value'		=> '1',
-				'fields'			=> $count,
+				'fields'			=> $count ? 'ids' : '',
 			]
 		);
 

@@ -63,6 +63,9 @@ class Loa
 
     private function includes(): void
     {
+        // traits
+        require_once( self::$plugin_path_inc . 'traits/trait-articles-meta.php' );
+
         // abstracts
         require_once( self::$plugin_path_inc . 'abstracts/abstract-class-endpoint.php' );
 

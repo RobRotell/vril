@@ -183,3 +183,27 @@ add_filter( 'gettext', function( string $translation = '' ): string {
 
 	return $translation;
 }, 9999 );
+
+
+/**
+ * Block unneeded REST API endpoints
+ *
+ * @param	array 	$endpoints 	Endpoints
+ * @return 	array 				Filtered endpoints
+ */
+add_filter( 'rest_endpoints', function( $endpoints ) {
+
+	// allow all endpoints for logged in admins
+	$current_user = wp_get_current_user();
+	if( in_array( 'administrator', $current_user->roles ) ) {
+		return $endpoints;
+	}
+
+	foreach( $endpoints as $route => $endpoint ) {
+		if( !apply_filters( 'vril_whitelist_rest_route', false, $route ) ) {
+			unset( $endpoints[ $route ] );
+		}
+	}
+
+	return $endpoints;
+}, 9999 );

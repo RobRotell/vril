@@ -17,6 +17,7 @@ class Article_Block
     public $title       = '';
 
     public $url         = '';
+    public $domain      = '';
 
     public $is_read     = false;
     public $is_favorite = false;
@@ -40,7 +41,8 @@ class Article_Block
         $this->is_read      = Vril_Utility::convert_to_bool( get_field( 'article_read', $this->id ) );
         $this->is_favorite  = Vril_Utility::convert_to_bool( get_field( 'article_favorite', $this->id ) );
         
-        $this->url = esc_url( get_field( 'article_url', $this->id ) );
+        $this->url      = esc_url( get_field( 'article_url', $this->id ) );
+        $this->domain   = get_field( 'article_domain', $this->id );
 
         // if no actual title, use URL for title
         if( empty( $this->title ) ) {
