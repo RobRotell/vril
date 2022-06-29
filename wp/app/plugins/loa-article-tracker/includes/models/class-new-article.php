@@ -178,13 +178,15 @@ class New_Article
 		$url 	= $this->url;
 		$parts 	= parse_url( $url );
 
-		parse_str( $parts['query'], $query );
-		foreach( $query as $param => $value ) {
-			if( 'utm_' === substr( $param, 0, 4 ) ) {
-				unset( $query[ $param ] );
+		if( isset( $parts['query'] ) && !empty( $parts['query'] ) ) {
+			parse_str( $parts['query'], $query );
+			foreach( $query as $param => $value ) {
+				if( 'utm_' === substr( $param, 0, 4 ) ) {
+					unset( $query[ $param ] );
+				}
 			}
+			$parts['query'] = http_build_query( $query );
 		}
-		$parts['query'] = http_build_query( $query );
 
 		// http_build_url only available with pecl, so once we migrate to our own server ...
 		$url = sprintf( 'https://%s', $parts['host'] );
