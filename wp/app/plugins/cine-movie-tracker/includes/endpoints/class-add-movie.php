@@ -4,11 +4,26 @@
 namespace Cine\Endpoints;
 
 
+use Cine\Controllers\Helpers;
+use Cine\Controllers\REST_API;
+use Cine\Core\Post_Types;
+use Cine\Core\Taxonomies;
+use Cine\Core\Transients;
+use Cine\Models\Movie_Block;
+use WP_Error;
+use WP_Query;
+use WP_REST_Controller;
+use WP_REST_Request;
+use WP_REST_Response;
+use WP_REST_Server;
 
-final class Add_Movie extends \Vril\Core_Classes\REST_API_Endpoint
+
+
+final class Get_Movies extends \Vril\Core_Classes\REST_API_Endpoint
 {
-	public $route 	= 'articles/(?P<id>[\d]+)';
-	public $method 	= WP_REST_Server::READABLE;
+	protected $namespace	= REST_API::NAMESPACE;
+	public string $route	= 'movies';
+	public string $method	= WP_REST_Server::CREATABLE;
 
 
 	/**
@@ -18,11 +33,10 @@ final class Add_Movie extends \Vril\Core_Classes\REST_API_Endpoint
 	 */
 	public function check_permission( WP_REST_Request $request ): bool
 	{
-		// username and app password should be passed via Authorization header
 		$current_user = wp_get_current_user();
 
 		return $current_user->has_cap( 'edit_posts' );
-	}	
+	}
 
 
 	/**
@@ -35,22 +49,14 @@ final class Add_Movie extends \Vril\Core_Classes\REST_API_Endpoint
 		return [
 			'id'	=> [
 				'required'			=> true,
+				'sanitize_callback'	=> 'absint',
 				'type'				=> 'string',
-				'sanitize_callback' => 'absint',
-			],					
-			'read'	=> [
-				'default'			=> null,
-				'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
 			],
-			'favorite' => [
-				'default'			=> null,
-				'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],
-			],
-			'include_meta' => [
-				'default'			=> true,
+			'to_watch' => [
+				'default'			=> false,
+				'sanitize_callback' => [ 'Vril_Utility', 'convert_to_bool' ],
 				'type'				=> 'string',
-				'sanitize_callback'	=> [ 'Vril_Utility', 'convert_to_bool' ],				
-			],				
+			]
 		];
 	}
 
@@ -59,78 +65,135 @@ final class Add_Movie extends \Vril\Core_Classes\REST_API_Endpoint
 	 * Handle endpoint request
 	 *
 	 * @param	WP_Rest_Request 	$req	API request
-	 * @return 	WP_REST_Response			API response
+	 * @return 	WP_REST_Response|WP_Error	API response
 	 */
-	public function handle_request( WP_Rest_Request $req ): WP_REST_Response
+	public function handle_request( WP_Rest_Request $req ): WP_REST_Response|WP_Error
 	{
-		$article_id		= $req->get_param( 'id' );
-		$read			= $req->get_param( 'read' );
-		$favorite		= $req->get_param( 'favorite' );
-		$include_meta 	= $req->get_param( 'include_meta' );
+		$params = $req->get_params();
 
 		// prep response object
-		$res = $this->create_response_obj( 'meta', 'article' );
-
+		$res = $this->create_response_obj( 'movies', 'meta', 'params' );
+		$res->add_data( 'params', $params );
+		
 		try {
-			$post = get_post( $article_id );
-			if( empty( $post ) || $post->post_type !== Loa()->post_types::POST_TYPE ) {
-				throw new Exception(
-					sprintf(
-						'No article matches ID: "%s"',
-						$article_id
-					)
-				);
+
+			// data will contain "movies" and "meta" props
+			$data = $this->get_from_transients( $params );
+			if( empty( $data ) ) {
+				$data = $this->get_from_query( $params );
 			}
 
-			// update read status
-			if( is_bool( $read ) ) {
-				update_field( 'article_read', $read, $article_id );
-	
-				// confirm that read status was correctly updated
-				if( !$read === get_field( 'article_read', $article_id ) ) {
-					throw new Exception(
-						sprintf(
-							'Failed to update read status for article (ID: "%s")',
-							$article_id
-						)
-					);
-				}
-			}
-
-			// update favorite status
-			if( is_bool( $favorite ) ) {
-				update_field( 'article_favorite', $favorite, $article_id );
-
-				// confirm that favorite status was correctly updated
-				if( !$favorite === get_field( 'article_favorite', $article_id ) ) {
-					throw new Exception(
-						sprintf(
-							'Failed to update favorite status for article (ID: "%s")',
-							$article_id
-						)
-					);
-				}
-			}
-
-			// return updated article to frontend
-			$article = new Article_Block( $post );
-			$article->package();
-
-			if( $include_meta ) {
-				$meta = [
-					'last_updated' 			=> Articles_Meta::get_last_updated(),
-					'total_articles' 		=> Articles_Meta::get_article_count(),
-					'total_articles_read' 	=> Articles_Meta::get_article_count_read(),
-					'total_articles_unread'	=> Articles_Meta::get_article_count_unread(),
-				];
-	
-				$res->add_data( 'meta', $meta );
-			}			
+			$res
+				->add_data( 'meta', $data['meta'] )
+				->add_data( 'movies', $data['movies'] );
 
 		} catch( Throwable $e ) {
 			$res->set_error( $e->getMessage() );
 		}
 
 		return rest_ensure_response( $res->package() );			
+	}
+
+
+	/**
+	 * Get movies (and query meta) from transients
+	 *
+	 * @param 	array 	$params 	Request params
+	 * @return 	array|false 		Array of "meta" and "movies" if transient found; otherwise, false
+	 */
+	private function get_from_transients( array $params ): array|false
+	{
+		$transient_key 		= sprintf( 'get_movies_%s', http_build_query( $params ) );
+		$transient_value 	= Transients::get_transient( $transient_key );
+
+		if( isset( $transient_value['meta'] ) && isset( $transient_value['movies'] ) ) {
+			return $transient_value;
+		}
+
+		return false;
+	}
+
+
+	/**
+	 * Get movies (and query meta) from WP query
+	 *
+	 * @param 	array 	$params 	Request params
+	 * @return	array 				Contains "meta" and "movies" props
+	 */
+	private function get_from_query( array $params ): array
+	{
+		$meta	= [];
+		$movies = [];
+
+		[
+			'count' 	=> $count,
+			'genre' 	=> $genre,
+			'id' 		=> $id,
+			'keyword' 	=> $keyword,
+			'page' 		=> $page,
+			'to_watch'	=> $to_watch,
+		] = $params;
+
+		$query_args = [
+			'fields'			=> 'ids',
+			'order'				=> 'ASC',
+			'orderby'			=> 'title',
+			'paged'				=> $page,
+			'post_type' 		=> Post_Types::POST_TYPE,
+			'posts_per_page' 	=> $count,
+		];
+
+		// querying for specific movie?
+		if( !empty( $id ) ) {
+			$query_args['post__in'] = (array)$id;
+
+		} else {
+
+			// querying for specific category of movies?
+			if( !empty( $genre ) ) {
+				$query_args['tax_query'] = [
+					[
+						'field'		=> 'term_id',
+						'taxonomy' 	=> Taxonomies::TAXONOMY,
+						'terms' 	=> $genre,
+					]
+				];
+			}
+
+			// querying movies by keyword?
+			if( !empty( $keyword ) ) {
+				$query_args['s'] = $keyword;
+			}
+
+			// querying movies by whether they've been watched or not?
+			if( $to_watch ) {
+				$query_args['meta_query'] = [
+					[
+						'key' 	=> 'to_watch',
+						'value'	=> true,
+					]
+				];
+			}
+		}
+
+		$query = new WP_Query( $query_args );
+		
+		// convert movie posts in movie blocks with specific movie info
+		foreach( $query->posts as $post_id ) {
+			$movie 		= new Movie_Block( $post_id );
+			$movies[] 	= get_object_vars( $movie );
+		}
+
+		// used to determine if more pages of posts or if last page (e.g. total / page)
+		$meta['post_count']		= $query->post_count;
+		$meta['total_posts'] 	= $query->found_posts;
+
+		$data = compact( 'meta', 'movies' );
+
+		// save transient for later queries
+		$transient_key = sprintf( 'get_movies_%s', http_build_query( $params ) );
+		Transients::set_transient( $transient_key, null, $data );
+
+		return $data;
 	}
 }

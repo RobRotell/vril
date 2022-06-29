@@ -92,7 +92,7 @@ final class Get_Movies extends \Vril\Core_Classes\REST_API_Endpoint
 		$params = $req->get_params();
 
 		// prep response object
-		$res = $this->create_response_obj( 'movies', 'meta', 'params' );
+		$res = $this->create_response_obj( 'meta', 'params', 'movies' );
 		$res->add_data( 'params', $params );
 		
 		try {
@@ -123,11 +123,11 @@ final class Get_Movies extends \Vril\Core_Classes\REST_API_Endpoint
 	 */
 	private function get_from_transients( array $params ): array|false
 	{
-		$transient_key 		= sprintf( 'get_movies_%s', http_build_query( $params ) );
-		$transient_value 	= Transients::get_transient( $transient_key );
+		$key	= sprintf( 'get_movies_%s', http_build_query( $params ) );
+		$value 	= Transients::get_transient( $key );
 
-		if( isset( $transient_value['meta'] ) && isset( $transient_value['movies'] ) ) {
-			return $transient_value;
+		if( isset( $value['meta'] ) && isset( $value['movies'] ) ) {
+			return $value;
 		}
 
 		return false;

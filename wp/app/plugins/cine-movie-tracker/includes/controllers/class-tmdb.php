@@ -4,10 +4,13 @@
 namespace Cine\Controllers;
 
 
+use stdClass;
+
+
 defined( 'ABSPATH' ) || exit;
 
 
-class TMDB
+class TMDb
 {
 	const API_KEY_OPTION_NAME 	= 'cine_tmdb_apikey';
 	const API_URL 				= 'https://api.themoviedb.org/3';
@@ -50,12 +53,12 @@ class TMDB
 	 * 
 	 * @return	object 				Response data 				
 	 */
-	private static function fetch( string $api_slug, string $query = null, int $page = null ) 
+	private static function fetch( string $api_slug, string $query = null, int $page = null ): object 
 	{
-		$results	= [];
+		$res_body	= new stdClass;
 		$params 	= [];
 
-		$params['api_key'] = self::get_tmdb_apikey();
+		$params['api_key'] = self::get_api_key();
 
 		// check for query param
 		if( !empty( $query ) ) {
@@ -67,21 +70,17 @@ class TMDB
 			$params['page'] = $page;
 		}
 
-		// build URL to fetch
-		$url = sprintf( 
-			'%s/%s?%s', 
-			self::API_URL, 
-			$api_slug,
-			http_build_query( $params )
-		);
+		$api_url = sprintf( '%s/%s', self::API_URL, $api_slug );
+		$api_url = add_query_arg( $params, $api_url );
 
-		$request = wp_safe_remote_get( $url );
+		$res = wp_safe_remote_get( $api_url );
 
-		if( 200 === wp_remote_retrieve_response_code( $request ) ) {
-			$results = json_decode( wp_remote_retrieve_body( $request ) );
+		// todo — exception on bad responses
+		if( 200 === wp_remote_retrieve_response_code( $res ) ) {
+			$res_body = json_decode( wp_remote_retrieve_body( $res ) );
 		}
 
-		return $results;
+		return $res_body;
 	}
 
 
@@ -89,35 +88,22 @@ class TMDB
 	 * Wrapper for finding movies from TMDB by title
 	 *
 	 * @param	string 	$title 	Movie title
-	 * @param 	int		$limit 	Limit of results
-	 * @return	array 			Matches
+	 * @param 	int		$page 	Page of results
+	 * 
+	 * @return	array 			Contains results for page, total number of pages of results, total number of results
 	 */
-	public static function find_movie_by_title( string $title, int $limit = 10 )
+	public static function find_movie_by_title( string $title, int $page = 1 ): array
 	{
 		$page = 1;
 		$slug = 'search/movie';
 		
-		$request = self::fetch( $slug, $title, 1 );
-		if( empty( $request ) || !property_exists( $request, 'results' ) ) {
-			return [];
+		$res = self::fetch( $slug, $title, $page );
 
-		} else {
-			$results = $request->results;
+		$page_results	= $res->results;
+		$total_pages 	= $res->total_pages;
+		$total_results 	= $res->total_results;
 
-			// grab more results?
-			if( $limit > count( $results ) ) {
-				if( property_exists( $request, 'total_pages' ) && 1 !== $request->total_pages ) {
-					while( ++$page <= $request->total_pages && count( $results ) < $limit ) {
-						$page_results = self::fetch( $slug, $title, $page );
-						if( !empty( $page_results ) && property_exists( $page_results, 'results' ) ) {
-							$results = array_merge( $results, $page_results->results );
-						}
-					}
-				}
-			}
-
-			return array_slice( $results, 0, $limit );
-		}
+		return compact( 'page_results', 'total_pages', 'total_results' );
 	}
 
 
@@ -165,6 +151,21 @@ class TMDB
 		$url = sprintf( '%s/%s/%s', self::IMAGE_URL, $width, $path );
 
 		return esc_url_raw( $url );
+	}
+
+
+	/**
+	 * Sanitize and specially transform data from TMDb
+	 *
+	 * @param	string 	$input	Input from TMDb
+	 * @return 	string			Sanitized input
+	 */
+	public static function sanitize_convert_string( string $input = '' ): string
+	{
+		$sanitized = sanitize_text_field( $input );
+		$converted = iconv( 'UTF-8', 'ASCII//TRANSLIT', $sanitized );
+
+		return $converted;
 	}
 
 }

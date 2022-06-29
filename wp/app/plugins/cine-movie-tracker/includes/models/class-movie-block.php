@@ -26,8 +26,8 @@ class Movie_Block
 	private int $tmdb_id;
 	
 	private ?DateTime $release_datetime;
-	public ?int $release_year;
 	public ?string $release_date;
+	public ?int $release_year;
 
 	public bool $to_watch;
 	public bool $watched;
@@ -106,8 +106,8 @@ class Movie_Block
 			$this->release_datetime = new DateTime( $release_date );
 
 			if( $this->release_datetime ) {
-				$this->release_year = $this->release_datetime->format( 'Y' );
 				$this->release_date = $this->release_datetime->format( 'Y-m-d' );
+				$this->release_year = $this->release_datetime->format( 'Y' );
 			}
 
 		} catch( Exception $e ) {

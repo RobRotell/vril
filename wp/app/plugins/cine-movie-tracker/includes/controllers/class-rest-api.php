@@ -3,8 +3,9 @@
 
 namespace Cine\Controllers;
 
-
+use Cine\Controller\Endpoint;
 use Cine\Endpoints\Get_Movies as Endpoint_Get_Movies;
+use Cine\Endpoints\Query_TMDb as Endpoint_Query_TMDb;
 
 
 defined( 'ABSPATH' ) || exit;
@@ -53,6 +54,7 @@ class REST_API
 	private function load_endpoints(): void
 	{
 		require_once( Cine()::$plugin_path_inc . '/endpoints/class-get-movies.php' );
+		require_once( Cine()::$plugin_path_inc . '/endpoints/class-query-tmdb.php' );
 
 		// require_once( Cine()::$plugin_path_inc . '/endpoints/class-get-articles.php' );
 		// require_once( Cine()::$plugin_path_inc . '/endpoints/class-add-article.php' );
@@ -72,6 +74,7 @@ class REST_API
 	{
 		$this->endpoints = [
 			'get-movies' => new Endpoint_Get_Movies,
+			'query-tmdb' => new Endpoint_Query_TMDb,
 		];
 	}
 
@@ -113,7 +116,7 @@ class REST_API
 	 */
 	public static function extension_origin_fix( $origin )
 	{
-		header( 'x-vril-api: loa' );
+		header( 'x-vril-api: cine' );
 
 		if( false !== strpos( $origin, 'chrome-extension' ) ) {
 			header( 'Access-Control-Allow-Methods: OPTIONS, GET, POST, PUT, PATCH, DELETE' );

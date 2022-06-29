@@ -93,6 +93,7 @@ final class Cine
 
         // models
         require_once( self::$plugin_path_inc . 'models/class-movie-block.php' );
+        require_once( self::$plugin_path_inc . 'models/class-tmdb-movie.php' );
     }
 
 
@@ -114,7 +115,7 @@ final class Cine
         $this->last_updated         = new Cine\Controllers\Last_Updated;
         $this->rest_api             = new Cine\Controllers\REST_API;
         $this->tinify               = new Cine\Controllers\Tinify;
-        $this->tmdb                 = new Cine\Controllers\TMDB;
+        $this->tmdb                 = new Cine\Controllers\TMDb;
 
         $this->post_types           = new Cine\Core\Post_Types;
         $this->taxonomies           = new Cine\Core\Taxonomies;
