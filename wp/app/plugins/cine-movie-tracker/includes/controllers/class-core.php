@@ -1,16 +1,16 @@
 <?php
 
 
-namespace Cine\Core;
+namespace Cine\Controller;
 
 
 defined( 'ABSPATH' ) || exit;
 
 
-class Post_Types
+class Core
 {
-    const POST_TYPE = 'movie';
-    const TAXONOMY  = 'genre';
+	const POST_TYPE = 'movie';
+	const TAXONOMY 	= 'genre';
 
 
 	public function __construct()
@@ -19,13 +19,23 @@ class Post_Types
 	}
 
 
-	private function add_wp_hooks()
+	private function add_wp_hooks(): void
 	{
-        add_action( 'init', [ $this, 'add_post_type' ] );
+		add_action( 'init',                 [ $this, 'add_post_type' ] );
+        add_action( 'init',                 [ $this, 'add_taxonomy' ] );
+		add_action( 'after_setup_theme',    [ $this, 'set_image_sizes' ] );
 	}
 
-	
-    public function add_post_type()
+
+	public function set_image_sizes(): void
+	{
+		add_theme_support( 'post-thumbnails' );
+		// add_image_size( 'backdrop_small', 640, 300, true );
+		// add_image_size( 'backdrop', 1100, 300, true );
+	}
+
+
+    public function add_post_type(): void
     {
         register_post_type( 
             self::POST_TYPE, 
@@ -37,7 +47,7 @@ class Post_Types
                 'show_in_rest'          => true,
                 'show_ui'               => true,
                 'supports'              => [ 'title', 'editor', 'thumbnail' ],
-                'taxonomies'            => [ Taxonomies::TAXONOMY ],
+                'taxonomies'            => [ self::TAXONOMY ],
                 'labels'                => [
                     'name'                      => 'Movies',
                     'singular_name'             => 'Movie',
@@ -64,5 +74,26 @@ class Post_Types
             ]            
         );
     }
-   
+
+
+    public function add_taxonomy(): void
+    {
+        $singular	= ucwords( self::TAXONOMY );
+        $plural		= sprintf( '%ss', ucwords( self::TAXONOMY ) );
+
+        register_taxonomy( 
+            self::TAXONOMY, 
+            self::POST_TYPE, 
+            [
+                'label'             => $plural,
+                'show_tagcloud'     => false,
+                'show_admin_column' => true,
+                'labels'            => [
+                    'name'          => $plural,
+                    'singular_name' => $singular,                    
+                ],
+            ]
+        );
+    }
+
 }

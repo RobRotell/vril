@@ -1,11 +1,7 @@
 <?php
 
 
-namespace Cine\Controllers;
-
-
-use Cine\Core\Post_Types;
-use Cine\Core\Taxonomies;
+namespace Loa\Core;
 
 
 defined( 'ABSPATH' ) || exit;
@@ -13,7 +9,7 @@ defined( 'ABSPATH' ) || exit;
 
 class Last_Updated
 {
-	const OPTION_UPDATE = 'cine_last_updated';
+	const OPTION_UPDATE = 'loa_last_updated';
 
 
 	/**
@@ -34,8 +30,8 @@ class Last_Updated
 	 */	
 	private function add_wp_hooks()
 	{
-		$post_type	= Post_Types::POST_TYPE;
-		$taxonomy 	= Taxonomies::TAXONOMY;	
+		$post_type = Loa()->post_types::POST_TYPE;
+		$taxonomy = Loa()->post_types::TAXONOMY;	
 		
 		add_action( 'save_post_'. $post_type,	[ $this, 'update_timestamp' ] );
 		add_filter( 'acf/update_value',			[ $this, 'handle_acf_update' ], 10, 4 );
@@ -46,7 +42,7 @@ class Last_Updated
 
 
 	/**
-	 * Update timestamp for when movies were last updated
+	 * Update timestamp for when articles were last updated
 	 *
 	 * @return 	void
 	 */
@@ -57,7 +53,7 @@ class Last_Updated
 
 
 	/**
-	 * Get timestamp for when movies and genres were last updated
+	 * Get timestamp for when articles and tags were last updated
 	 *
 	 * @return 	string 	Timestamp
 	 */
@@ -68,7 +64,7 @@ class Last_Updated
 
 
 	/**
-	 * Check if movie was updated, and then update last updated value
+	 * Check if article post was updated, and then update last updated value
 	 *
 	 * @param	mixed 	$value 		New field value
 	 * @param 	mixed 	$post_id 	ID of post being saved/updated
@@ -82,7 +78,7 @@ class Last_Updated
 		if( $value !== $orig_value ) {
 			$post = get_post( $post_id );
 
-			if( !empty( $post ) && $post->post_type === Post_Types::POST_TYPE ) {
+			if( !empty( $post ) && $post->post_type === Loa()->post_types::POST_TYPE ) {
 				self::update_timestamp();
 			}
 		}

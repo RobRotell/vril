@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Vril\Core_Classes;
+namespace Loa\Controller;
 
 
 use WP_Application_Passwords;
@@ -12,9 +12,28 @@ use WP_User;
 defined( 'ABSPATH' ) || exit;
 
 
-abstract class Auth_Tokens
+class Auth_Tokens
 {
-	protected string $app_name;
+	private const APP_NAME = 'loa_v2';
+
+
+	/**
+	 * Get hashed auth token for specific user
+	 *
+	 * @param	int 	$user_id 	User ID
+	 * @return	string|null 		String, if auth token exists
+	 */
+	public static function get_hashed_auth_token( int $user_id ): string|null
+	{
+		$app_passwords = WP_Application_Passwords::get_user_application_passwords( $user_id );
+		foreach( $app_passwords as $app_password ) {
+			if( self::APP_NAME === $app_password['name'] ) {
+				return $app_password['password'];
+			}
+		}
+
+		return null;
+	}
 
 
 	/**
@@ -23,7 +42,7 @@ abstract class Auth_Tokens
 	 * @param	int 	$user_id 	User ID
 	 * @return	bool 				Always true
 	 */
-	public function delete_auth_token( int $user_id ): bool
+	public static function delete_auth_token( int $user_id ): bool
 	{
 		$app_uuid = null;
 
@@ -31,7 +50,7 @@ abstract class Auth_Tokens
 		foreach( $app_passwords as $app_password ) {
 
 			// should only be one
-			if( self::$app_name === $app_password['name'] ) {
+			if( self::APP_NAME === $app_password['name'] ) {
 				$app_uuid = $app_password['uuid'];
 				break;
 			}
@@ -52,10 +71,10 @@ abstract class Auth_Tokens
 	 * @return	bool 				Always true
 	 * @throws 	string|WP_Error 	If successful, auth token; otherwise, WP_Error
 	 */
-	public function create_auth_token( int $user_id ): string|WP_Error
+	public static function create_auth_token( int $user_id ): string|WP_Error
 	{
 		$app_args = [
-			'name' => self::$app_name
+			'name' => self::APP_NAME
 		];
 
 		$data = WP_Application_Passwords::create_new_application_password( $user_id, $app_args );
@@ -77,13 +96,13 @@ abstract class Auth_Tokens
 	 * 
 	 * @return	bool 			True, if validated; otherwise, false
 	 */
-	public function validate_auth_token( WP_User $user, string $token ): bool
+	public static function validate_auth_token( WP_User $user, string $token ): bool
 	{
 		$user_id 	= $user->get( 'id' );
 		$user_login = $user->get( 'user_login' );
 		
 		// bail early if auth token isn't registered for user
-		if( !WP_Application_Passwords::application_name_exists_for_user( $user_id, self::$app_name ) ) {
+		if( !WP_Application_Passwords::application_name_exists_for_user( $user_id, self::APP_NAME ) ) {
 			return false;
 		}
 
@@ -91,5 +110,6 @@ abstract class Auth_Tokens
 		$validated_user = wp_authenticate_application_password( null, $user_login, $token );
 
 		return ( is_a( $validated_user, 'WP_User' ) && $user_id === $validated_user->get( 'id' ) );
-	}	
+	}		
+
 }

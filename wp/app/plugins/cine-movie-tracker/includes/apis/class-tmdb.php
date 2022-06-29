@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Cine\Controllers;
+namespace Cine\Api;
 
 
 defined( 'ABSPATH' ) || exit;
@@ -9,36 +9,10 @@ defined( 'ABSPATH' ) || exit;
 
 class TMDB
 {
-	const API_KEY_OPTION_NAME 	= 'cine_tmdb_apikey';
-	const API_URL 				= 'https://api.themoviedb.org/3';
-	const IMAGE_URL 			= 'https://image.tmdb.org/t/p';
+	const API_URL = 'https://api.themoviedb.org/3';
 
-	
-	/**
-	 * Get API key for TMDB
-	 *
-	 * @return 	string 	API key
-	 */	
-	public static function get_api_key(): string
-	{
-		return get_option( self::API_KEY_OPTION_NAME, '' );
-	}
+	private const IMAGE_URL = 'https://image.tmdb.org/t/p';
 
-	
-	/**
-	 * Get API key for TMDB
-	 *
-	 * @param	string	$api_key	New API key 	
-	 * @return 	bool				True, if new API key was saved
-	 */	
-	public static function set_api_key( string $api_key ): bool
-	{
-		if( !current_user_can( 'manage_options' ) ) {
-			return false;
-		}
-
-		return update_option( self::API_KEY_OPTION_NAME, $api_key );
-	}
 
 	
 	/**
@@ -55,7 +29,7 @@ class TMDB
 		$results	= [];
 		$params 	= [];
 
-		$params['api_key'] = self::get_tmdb_apikey();
+		$params['api_key'] = Cine()->admin::get_tmdb_apikey();
 
 		// check for query param
 		if( !empty( $query ) ) {

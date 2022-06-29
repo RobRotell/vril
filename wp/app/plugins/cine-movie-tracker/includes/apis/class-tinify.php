@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Cine\Controllers;
+namespace Cine\Api;
 
 
 use \Tinify\Tinify as TinifyApi;
@@ -13,34 +13,45 @@ defined( 'ABSPATH' ) || exit;
 
 class Tinify
 {
-	const API_KEY_OPTION_NAME = 'cine_tinify_apikey';
+	private $set_key = false;
 
-	
+
 	/**
-	 * Get API key for Tinify
+	 * Wrapper for prep
 	 *
-	 * @return 	string 	API key
-	 */	
-	public static function get_api_key(): string
+	 * @return 	void
+	 */
+	public function prep(): void
 	{
-		return get_option( self::API_KEY_OPTION_NAME, '' );
+		$this->include();
+		$this->set_key();
 	}
 
-	
-	/**
-	 * Get API key for Tinify
-	 *
-	 * @param	string	$api_key	New API key 	
-	 * @return 	bool				True, if new API key was saved
-	 */	
-	public static function set_api_key( string $api_key ): bool
-	{
-		if( !current_user_can( 'manage_options' ) ) {
-			return false;
-		}
 
-		return update_option( self::API_KEY_OPTION_NAME, $api_key );
-	}	
+	/**
+	 * Get dependencies
+	 *
+	 * @return 	void
+	 */
+	private function include(): void
+	{
+		require_once( Cine()::$plugin_path_inc . '/vendor/autoload.php' );
+	}
+
+
+	/**
+	 * Get dependencies
+	 *
+	 * @return 	void
+	 */
+	private function set_key(): void
+	{
+		if( !$this->set_key ) {
+			TinifyApi::setKey( Cine()->admin::get_tinify_apikey() );
+
+			$this->set_key = true;
+		}
+	}
 
 
 	/**
@@ -51,17 +62,14 @@ class Tinify
 	 */
 	public function optimize_image_from_data( string $data ): string
 	{
-		require_once( Cine()::$plugin_path . '/vendor/autoload.php' );
-		TinifyApi::setKey( self::get_api_key() );
+		$this->prep();
 
 		return TinifySource::fromBuffer( $data )->toBuffer();
 	}
 
 
 	/**
-	 * Optimize image from file
-	 * 
-	 * @throws 	Exception 			Invalid file path
+	 * Optimize image from image path
 	 *
 	 * @param 	string 	$file_path 	Image file path
 	 * @param 	string 	$new_path 	Path for optimized image. If empty, then original path will be overwritten
@@ -70,8 +78,7 @@ class Tinify
 	 */
 	public function optimize_image_from_path( string $file_path, string $new_path = '' ): string
 	{
-		require_once( Cine()::$plugin_path . '/vendor/autoload.php' );
-		TinifyApi::setKey( self::get_api_key() );
+		$this->prep();
 		
 		if( !is_file( $file_path ) ) {
 			throw new Exception( sprintf( 'Invalid file: "%s"', $file_path ) );
