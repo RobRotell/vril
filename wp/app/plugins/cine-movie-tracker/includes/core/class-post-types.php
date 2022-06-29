@@ -1,16 +1,16 @@
 <?php
 
 
-namespace Cine\Controller;
+namespace Cine\Core;
 
 
 defined( 'ABSPATH' ) || exit;
 
 
-class Core
+class Post_Types
 {
-	const POST_TYPE = 'movie';
-	const TAXONOMY 	= 'genre';
+    const POST_TYPE = 'movie';
+    const TAXONOMY  = 'genre';
 
 
 	public function __construct()
@@ -19,23 +19,13 @@ class Core
 	}
 
 
-	private function add_wp_hooks(): void
+	private function add_wp_hooks()
 	{
-		add_action( 'init',                 [ $this, 'add_post_type' ] );
-        add_action( 'init',                 [ $this, 'add_taxonomy' ] );
-		add_action( 'after_setup_theme',    [ $this, 'set_image_sizes' ] );
+        add_action( 'init', [ $this, 'add_post_type' ] );
 	}
 
-
-	public function set_image_sizes(): void
-	{
-		add_theme_support( 'post-thumbnails' );
-		// add_image_size( 'backdrop_small', 640, 300, true );
-		// add_image_size( 'backdrop', 1100, 300, true );
-	}
-
-
-    public function add_post_type(): void
+	
+    public function add_post_type()
     {
         register_post_type( 
             self::POST_TYPE, 
@@ -47,7 +37,7 @@ class Core
                 'show_in_rest'          => true,
                 'show_ui'               => true,
                 'supports'              => [ 'title', 'editor', 'thumbnail' ],
-                'taxonomies'            => [ self::TAXONOMY ],
+                'taxonomies'            => [ Taxonomies::TAXONOMY ],
                 'labels'                => [
                     'name'                      => 'Movies',
                     'singular_name'             => 'Movie',
@@ -74,26 +64,5 @@ class Core
             ]            
         );
     }
-
-
-    public function add_taxonomy(): void
-    {
-        $singular	= ucwords( self::TAXONOMY );
-        $plural		= sprintf( '%ss', ucwords( self::TAXONOMY ) );
-
-        register_taxonomy( 
-            self::TAXONOMY, 
-            self::POST_TYPE, 
-            [
-                'label'             => $plural,
-                'show_tagcloud'     => false,
-                'show_admin_column' => true,
-                'labels'            => [
-                    'name'          => $plural,
-                    'singular_name' => $singular,                    
-                ],
-            ]
-        );
-    }
-
+   
 }

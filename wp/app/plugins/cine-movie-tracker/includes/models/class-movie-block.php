@@ -1,13 +1,15 @@
 <?php
 
 
-namespace Cine\Model;
+namespace Cine\Models;
 
 
 use WP_Post;
 use DateTime;
 use NumberFormatter;
 use Vril_Utility;
+use Exception;
+use Cine\Core\Post_Types;
 
 
 defined( 'ABSPATH' ) || exit;
@@ -15,88 +17,148 @@ defined( 'ABSPATH' ) || exit;
 
 class Movie_Block
 {
-	public $id;
-	public $title;
-	public $content;
+	public int $id;
+	public string $title;
+	public string $synopsis;
+
+	// for internal usage only
+	private WP_Post $post;
+	private int $tmdb_id;
 	
-	public $year;
-	public $to_watch;
+	private ?DateTime $release_datetime;
+	public ?int $release_year;
+	public ?string $release_date;
 
-	public $website;
-	public $director;
-	public $writer;
-	public $budget;
-	public $box_office;
+	public bool $to_watch;
+	public bool $watched;
+
+	public string $website;
+	public string $director;
+	public string $writer;
+	public string $budget;
+	public string $box_office;
 	
-	public $backdrop;
-	public $poster;
+	public string $backdrop;
+	public string $poster;
 
 
-	public function __construct( WP_Post $post ) {
+	/**
+	 * Create movie block from post ID or post
+	 *
+	 * @throws 	Exception 	Invalid post
+	 * @param	int|WP_Post	$arg	Either post ID or WP_Post
+	 */
+	public function __construct( int|WP_Post $post ) 
+	{
+		if( is_int( $post ) ) {
+			$post = get_post( $post );
+		}
+
+		if( !$post || $post->post_type !== Post_Types::POST_TYPE ) {
+			throw new Exception( 'Movie block cannot be constructed from argument' );
+		}
+
+		$this->post 	= $post;
 		$this->id 		= $post->ID;
-		$this->title 	= html_entity_decode( $post->post_title );
-		
-		$this->grab_simple_details();		
+		$this->title 	= $post->post_title;
+		$this->synopsis	= $post->post_content;
+
+		$this
+			->populate_meta_props()
+			->populate_release_props()
+			->populate_image_props();
 	}
 
 
-	public function grab_simple_details() 
+	/**
+	 * Populate common data props to display on frontend
+	 *
+	 * @return 	self
+	 */
+	public function populate_meta_props(): self
 	{
-		$watch_status = get_field( 'to_watch', $this->id );
-		$this->to_watch = Vril_Utility::convert_to_bool( $watch_status );
+		$this->tmdb_id 		= get_field( 'id_tmdb', $this->id );
 
-		$this->director = get_field( 'director', $this->id );	
+		$this->to_watch 	= Vril_Utility::convert_to_bool( get_field( 'to_watch', $this->id ) );
+		$this->watched 		= !$this->to_watch;
 
-		$release_date = get_field( 'release_date', $this->id );
-		$release_date = new DateTime( $release_date );
-		$this->year = $release_date->format( 'Y' );		
-
-		// for image, first check for backdrop. If none, try poster
-		$image_id = get_field( 'backdrop', $this->id );
-		if( empty( $image_id ) ) {
-			$image_id = get_post_thumbnail_id( $this->id );
-		}
-		
-		if( !empty( $image_id ) ) {
-			$this->backdrop = wp_get_attachment_image_url( $image_id, 'backdrop_small' );
-		}
-
-		return $this;
-	}
-
-
-	public function grab_all_details() 
-	{
-		$content = get_the_content( null, true, $this->id );
-		$this->content = html_entity_decode( $content );
-
-		$this->writer 		= get_field( 'writer', $this->id );
+		$this->writer		= get_field( 'writer', $this->id );
+		$this->director 	= get_field( 'director', $this->id );
 
 		$this->budget 		= $this->convert_to_dollar( get_field( 'budget', $this->id ) );
 		$this->box_office 	= $this->convert_to_dollar( get_field( 'box_office', $this->id ) );
-		$this->website 		= get_field( 'website', $this->id );
-
-		$poster_id 			= get_post_thumbnail_id( $this->id );
-		$this->poster 		= wp_get_attachment_image_url( $poster_id, 'large' );	
+		
+		$this->website 		= esc_url_raw( get_field( 'website', $this->id ) );
 
 		return $this;
 	}
 
 
-	public function convert_to_dollar( $value ) 
+	/**
+	 * Populate props related to movie's release
+	 *
+	 * @return 	self
+	 */
+	public function populate_release_props(): self
 	{
-		if( !empty( $value = (int)$value ) && class_exists( 'NumberFormatter' ) ) {
-			$format = new NumberFormatter( 'en_US', NumberFormatter::DECIMAL );
-			$value = sprintf( '$%s', $format->format( $value ) );
+		try {
+			$release_date = get_field( 'release_date', $this->id );
+			$this->release_datetime = new DateTime( $release_date );
+
+			if( $this->release_datetime ) {
+				$this->release_year = $this->release_datetime->format( 'Y' );
+				$this->release_date = $this->release_datetime->format( 'Y-m-d' );
+			}
+
+		} catch( Exception $e ) {
+			// intentionally empty
 		}
 
-		return $value;
+		return $this;
 	}
 
 
-	public function package()
+	/**
+	 * Populate props related to images
+	 *
+	 * @return 	self
+	 */
+	public function populate_image_props(): self
 	{
-		return get_object_vars( $this );
+		$poster_id = get_post_thumbnail_id( $this->id );
+		if( !empty( $post_id ) ) {
+			$this->poster	= wp_get_attachment_image_url( $poster_id, 'large' );
+		}
+
+		// if no backdrop exists, fall back to poster
+		$backdrop_id = get_field( 'backdrop', $this->id );
+		if( empty( $backdrop_id ) && !empty( $poster_id ) ) {
+			$backdrop_id = $poster_id;
+		}
+		
+		if( !empty( $backdrop_id ) ) {
+			$this->backdrop = wp_get_attachment_image_url( $backdrop_id, 'backdrop_small' );
+		}
+
+		return $this;
+	}
+
+
+	/**
+	 * Convert value to USD amount
+	 *
+	 * @param	int	$value		Original USD amount
+	 * @return	string|false	String, if could be converted to original USD amount; otherwise false
+	 */
+	public function convert_to_dollar( int $value ): string|false 
+	{
+		if( !empty( $value ) && class_exists( 'NumberFormatter' ) ) {
+			$format = new NumberFormatter( 'en_US', NumberFormatter::DECIMAL );
+
+			return sprintf( '$%s', $format->format( $value ) );
+		}
+
+		return false;
 	}
 
 }
