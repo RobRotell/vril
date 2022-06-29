@@ -1,10 +1,11 @@
 <?php
 
+
 /**
  * Plugin Name: Cine
  * Plugin URI:  https://vril.robr.app
  * Description: Controls tracking, storage, and API for movies
- * Version:     1.0.0
+ * Version:     2.0.0
  * Author:      Rob
  * Author URI:  https://robrotell.dev
  *
@@ -15,7 +16,7 @@
 defined( 'ABSPATH' ) || exit;
 
 
-class Cine
+final class Cine
 {
 	protected static $_instance = null;
 
@@ -25,17 +26,23 @@ class Cine
     public static $plugin_path_inc  = false;
 
 
-    // subclasses
-    public $tmdb        = null;
-    public $tinify      = null;
-    public $helper      = null;
-    public $core        = null;
-    public $admin       = null;
-    public $api         = null;
-    public $endpoint    = null;
+    // controller subclasses
+    public $admin_columns;
+    public $admin_settings_page;
+    public $auth_tokens;
+    public $helpers;
+    public $last_updated;
+    public $rest_api;
+    public $tinify;
+    public $tmdb;
+
+    // core subclasses
+    public $post_types;
+    public $taxonomies;
+    public $transients;
 
 
-	public static function _instance(): self
+	public static function getInstance(): self
 	{
         if( null === self::$_instance ) {
             self::$_instance = new self();
@@ -45,7 +52,7 @@ class Cine
     }
     
 
-    public function __construct()
+    private function __construct()
     {
         $this->define();
         $this->includes();
@@ -64,47 +71,61 @@ class Cine
     private function includes(): void
     {
         // models
-        require_once( self::$plugin_path_inc . 'models/class-movie-block.php' );
-        require_once( self::$plugin_path_inc . 'models/class-search-result.php' );
-        require_once( self::$plugin_path_inc . 'models/class-new-movie.php' );
-        require_once( self::$plugin_path_inc . 'models/class-api-response.php' );
+        // require_once( self::$plugin_path_inc . 'models/class-movie-block.php' );
+        // require_once( self::$plugin_path_inc . 'models/class-search-result.php' );
+        // require_once( self::$plugin_path_inc . 'models/class-new-movie.php' );
+        // require_once( self::$plugin_path_inc . 'models/class-api-response.php' );
 
-        // external APIs
-        require_once( self::$plugin_path_inc . 'apis/class-tinify.php' );
-        require_once( self::$plugin_path_inc . 'apis/class-tmdb.php' );
-        
         // controllers
-        require_once( self::$plugin_path_inc . 'controllers/class-helper.php' );
-        require_once( self::$plugin_path_inc . 'controllers/class-core.php' );
-        require_once( self::$plugin_path_inc . 'controllers/class-admin.php' );
-        require_once( self::$plugin_path_inc . 'controllers/class-api.php' );
-        require_once( self::$plugin_path_inc . 'controllers/class-endpoint.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-rest-api.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-admin-columns.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-admin-settings-page.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-auth-tokens.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-helpers.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-last-updated.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-tinify.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-tmdb.php' );
+        
+        // core
+        require_once( self::$plugin_path_inc . 'core/class-post-types.php' );        
+        require_once( self::$plugin_path_inc . 'core/class-taxonomies.php' );
+        require_once( self::$plugin_path_inc . 'core/class-transients.php' );
+
+        // models
+        require_once( self::$plugin_path_inc . 'models/class-movie-block.php' );
     }
 
 
 	private function add_wp_hooks(): void
 	{
-        add_action( 'plugins_loaded', [ $this, 'load_classes' ] );
+        add_action( 
+            'plugins_loaded', 
+            [ $this, 'load_classes' ] 
+        );
 	}    
 
 
     public function load_classes(): void
     {
-        $this->tmdb     = new Cine\Api\TMDB();
-        $this->tinify   = new Cine\Api\Tinify();
-        
-        $this->helper   = new Cine\Controller\Helper();
-        $this->core     = new Cine\Controller\Core();
-        $this->admin    = new Cine\Controller\Admin();
-        $this->api      = new Cine\Controller\API();
-        $this->endpoint = new Cine\Controller\Endpoint();
+        $this->admin_columns        = new Cine\Controllers\Admin_Columns;
+        $this->admin_settings_page  = new Cine\Controllers\Admin_Settings_Page;
+        $this->auth_tokens          = new Cine\Controllers\Auth_Tokens;
+        $this->helpers              = new Cine\Controllers\Helpers;
+        $this->last_updated         = new Cine\Controllers\Last_Updated;
+        $this->rest_api             = new Cine\Controllers\REST_API;
+        $this->tinify               = new Cine\Controllers\Tinify;
+        $this->tmdb                 = new Cine\Controllers\TMDB;
+
+        $this->post_types           = new Cine\Core\Post_Types;
+        $this->taxonomies           = new Cine\Core\Taxonomies;
+        $this->transients           = new Cine\Core\Transients;
     }
 
 }
 
 
 function Cine() {
-    return Cine::_instance();
+    return Cine::getInstance();
 }
 
 

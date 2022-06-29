@@ -51,7 +51,7 @@ final class Vril_Utility
 	 * Convert value to boolean
 	 *
 	 * @param	mixed 	$var 	Variable to convert to boolean
-	 * @return 	boolean 		Boolean
+	 * @return 	bool 			Boolean
 	 */
 	public static function convert_to_bool( $var ): bool
 	{
@@ -69,12 +69,12 @@ final class Vril_Utility
 	 * Simple integer-converting function
 	 *
 	 * @param	mixed	$var 	Variable to convert to integer
-	 * @return	integer 		Integer
+	 * @return	int 			Integer
 	 */	
 	public static function convert_to_int( $var ): int 
 	{
 		if( is_array( $var ) && 1 === count( $var ) ) {
-			return self::convert_to_int( $var );
+			return self::convert_to_int( array_shift( $var ) );
 		}
 
 		return (int)$var;
@@ -106,6 +106,29 @@ final class Vril_Utility
 		$arg = self::sanitize_var( $arg );
 
 		return $arg;
+	}
+
+
+	/**
+	 * Singular hashing system for codes
+	 *
+	 * @param	string	$code 	Code to hash
+	 * @param 	bool 	$season	Wrap code with salt?
+	 * 
+	 * @return 	string 			Hashed code
+	 */
+	public static function hash( string $code, bool $season = true ): string
+	{
+		if( $season ) {
+			$code = sprintf( 
+				'%s%s%s', 
+				wp_salt( 'secure_auth' ), 
+				$code, 
+				wp_salt(), 
+			);
+		}
+
+		return hash( VRIL_HASH_METHOD, $code );
 	}
 
 }

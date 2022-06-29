@@ -1,34 +1,32 @@
 <?php
 
 
-namespace Loa\Model;
+namespace Vril\Core_Classes;
 
 
-use Exception;
-use Vril_Utility;
+use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
-use WP_Error;
 
 
 defined( 'ABSPATH' ) || exit;
 
 
-class Api_Response
+class REST_API_Response
 {
-	private $start 			= null;
-	private $end 			= null;
-	private $duration		= null;
+	public ?int $start 					= null;
+	public ?int $end 					= null;
+	public ?int $duration				= null;
 
-	private $success 		= false;
-	private $error 			= false;
-	private $fulfilled		= false;
+	public bool $success 				= false;
+	public bool $error 					= false;
+	public bool $fulfilled 				= false;
 
-	private $status_code	= null;
-	private $response 		= null;
+	public ?int $status_code			= null;
+	public ?WP_REST_Response $response	= null;
 
-	private $data 			= [];
+	public array $data 					= [];
 
 
 	public function __construct()
@@ -42,17 +40,22 @@ class Api_Response
 	 * Set error state for response object
 	 *
 	 * @param	string	$err 			Error message
-	 * @param 	int 	$response_code 	HTTP response code
+	 * @param 	mixed 	$response_code 	HTTP response code
 	 * 
 	 * @return	self 					Response object
 	 */
-	public function set_error( string $err, int $response_code = 500 ): self
+	public function set_error( string $err, $response_code = 0 ): self
 	{
 		$this->error	= true;
 		$this->success	= false;
 
 		// clear out any preexisting data
 		$this->data = [];
+
+		$response_code = absint( $response_code );
+		if( empty( $response_code ) ) {
+			$response_code = 200;
+		}
 
 		$this
 			->add_data_key( 'error' )
@@ -155,7 +158,7 @@ class Api_Response
 	 *
 	 * @return 	array 	Packaged data
 	 */
-	private function get_packaged_data(): array
+	public function get_packaged_data(): array
 	{
 		$this->duration = ( $this->end - $this->start );
 
@@ -165,7 +168,10 @@ class Api_Response
 		];
 
 		if( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			$packaged['duration'] = $this->duration;
+			$packaged['debug'] = [
+				'duration'		=> $this->duration,
+				'memory_usage' 	=> memory_get_usage( true ),
+			];
 		}
 
 		$this->fulfilled = true;		

@@ -5,6 +5,7 @@ namespace Loa\Controller;
 
 
 use WP_Post;
+use Loa\Core\Last_Updated;
 
 
 defined( 'ABSPATH' ) || exit;
@@ -46,56 +47,14 @@ class Admin
 	
 	public function render_settings_page(): void
 	{
-		$admin_action = 'loa_update_settings';
-
-		if( isset( $_POST['loa_auth'] ) ) {
-			check_admin_referer( $admin_action );
-
-			$auth = sanitize_text_field( $_POST['loa_auth'] );
-			if( $auth !== self::get_auth() ) {
-				$success = self::set_auth( $auth );
-			}
-
-			?>
-
-			<?php if( isset( $success ) && $success ): ?>
-				<div id="setting-error-settings_updated" class="notice notice-success settings-error is-dismissible"> 
-					<p><strong>Settings updated!</strong></p>
-					<button type="button" class="notice-dismiss"></button>
-				</div>
-			<?php else: ?>
-				<div id="setting-error-settings_updated" class="notice notice-error settings-error is-dismissible"> 
-					<p><strong>Failed to save settings.</strong></p>
-					<button type="button" class="notice-dismiss"></button>
-				</div>
-			<?php endif; ?>
-
-			<?php
-		}
-
 		?>
-		
 			<div class="wrap">
 				<h1>Loa Settings</h1>
 
 				<form method="POST">
-					<?php wp_nonce_field( $admin_action ); ?>
 					<table class="form-table">
 						<tbody>
-							<tr>
-								<th><label for="loa_auth">Authorization</label></th>
-								<td>
-									<input 
-										id="loa_auth" 
-										class="regular-text" 
-										name="loa_auth" 
-										type="text" 
-										value="••••••••••" 
-									/>
-								</td>
-							</tr>
-
-							<?php if( !empty( $updated = self::get_last_updated() ) ): ?>
+							<?php if( !empty( $updated = Last_Updated::get_timestamp() ) ): ?>
 								<tr>
 									<th><label for="loa_update">Last Updated</label></th>
 									<td>
@@ -113,7 +72,6 @@ class Admin
 
 						</tbody>
 					</table>
-					<?php submit_button( 'Update' ); ?>
 				</form>
 			</div>
 		<?php
@@ -169,49 +127,6 @@ class Admin
 				}
 				break;
 		}				
-	}
-
-
-	/**
-	 * Check if passed string matches authorization code
-	 *
-	 * @param	string	$arg 	Potential auth code
-	 * @return 	bool 			True, if arg matches auth code
-	 */	
-	public static function check_auth( string $arg = '' ): bool
-	{
-		$arg = Loa()->helper::hash( $arg );
-
-		return $arg === self::get_auth();
-	}	
-
-
-	/**
-	 * Get current auth code
-	 *
-	 * @return 	string 	Auth code
-	 */		
-	public static function get_auth(): string
-	{
-		return get_option( self::OPTION_AUTH, '' );
-	}
-
-
-	/**
-	 * Set new auth code
-	 *
-	 * @param	string	$auth 	New auth code
-	 * @return 	bool 			True, if new auth code was saved
-	 */		
-	public static function set_auth( string $auth ): bool
-	{
-		if( current_user_can( 'manage_options' ) ) {
-			$auth = Loa()->helper::hash( $auth );
-
-			return update_option( self::OPTION_AUTH, $auth );
-		}
-		
-		return false;
 	}
 
 }
