@@ -31,7 +31,7 @@ final class Query_TMDb extends \Vril\Core_Classes\REST_API_Endpoint
 	 */
 	public function check_permission( WP_REST_Request $request ): bool
 	{
-		return true;
+		// username and app password should be passed via Authorization header
 		$current_user = wp_get_current_user();
 
 		return $current_user->has_cap( 'edit_posts' );

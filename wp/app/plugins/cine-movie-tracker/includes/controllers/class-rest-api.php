@@ -4,8 +4,12 @@
 namespace Cine\Controllers;
 
 use Cine\Controller\Endpoint;
+use Cine\Endpoints\Create_Auth as Endpoint_Create_Auth;
+use Cine\Endpoints\Delete_Movie as Endpoint_Delete_Movie;
 use Cine\Endpoints\Get_Movies as Endpoint_Get_Movies;
 use Cine\Endpoints\Query_TMDb as Endpoint_Query_TMDb;
+use Cine\Endpoints\Update_Movie as Endpoint_Update_Movie;
+use Cine\Endpoints\Validate_Auth as Endpoint_Validate_Auth;
 
 
 defined( 'ABSPATH' ) || exit;
@@ -53,8 +57,12 @@ class REST_API
 	 */
 	private function load_endpoints(): void
 	{
+		require_once( Cine()::$plugin_path_inc . '/endpoints/class-create-auth.php' );
+		require_once( Cine()::$plugin_path_inc . '/endpoints/class-validate-auth.php' );
 		require_once( Cine()::$plugin_path_inc . '/endpoints/class-get-movies.php' );
 		require_once( Cine()::$plugin_path_inc . '/endpoints/class-query-tmdb.php' );
+		require_once( Cine()::$plugin_path_inc . '/endpoints/class-delete-movie.php' );
+		require_once( Cine()::$plugin_path_inc . '/endpoints/class-update-movie.php' );
 
 		// require_once( Cine()::$plugin_path_inc . '/endpoints/class-get-articles.php' );
 		// require_once( Cine()::$plugin_path_inc . '/endpoints/class-add-article.php' );
@@ -73,8 +81,12 @@ class REST_API
 	private function create_endpoints(): void
 	{
 		$this->endpoints = [
-			'get-movies' => new Endpoint_Get_Movies,
-			'query-tmdb' => new Endpoint_Query_TMDb,
+			'create-auth'	=> new Endpoint_Create_Auth,
+			'delete-movie'	=> new Endpoint_Delete_Movie,
+			'get-movies' 	=> new Endpoint_Get_Movies,
+			'query-tmdb' 	=> new Endpoint_Query_TMDb,
+			'update-movie'	=> new Endpoint_Update_Movie,
+			'validate-auth'	=> new Endpoint_Validate_Auth,
 		];
 	}
 

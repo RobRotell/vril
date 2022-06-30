@@ -18,6 +18,8 @@ use WP_REST_Response;
 use WP_REST_Server;
 
 
+defined( 'ABSPATH' ) || exit;
+
 
 final class Get_Movies extends \Vril\Core_Classes\REST_API_Endpoint
 {

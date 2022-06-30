@@ -29,7 +29,7 @@ final class Cine
     // controller subclasses
     public $admin_columns;
     public $admin_settings_page;
-    public $auth_tokens;
+    public $auth;
     public $helpers;
     public $last_updated;
     public $rest_api;
@@ -80,7 +80,7 @@ final class Cine
         require_once( self::$plugin_path_inc . 'controllers/class-rest-api.php' );
         require_once( self::$plugin_path_inc . 'controllers/class-admin-columns.php' );
         require_once( self::$plugin_path_inc . 'controllers/class-admin-settings-page.php' );
-        require_once( self::$plugin_path_inc . 'controllers/class-auth-tokens.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-auth.php' );
         require_once( self::$plugin_path_inc . 'controllers/class-helpers.php' );
         require_once( self::$plugin_path_inc . 'controllers/class-last-updated.php' );
         require_once( self::$plugin_path_inc . 'controllers/class-tinify.php' );
@@ -110,7 +110,7 @@ final class Cine
     {
         $this->admin_columns        = new Cine\Controllers\Admin_Columns;
         $this->admin_settings_page  = new Cine\Controllers\Admin_Settings_Page;
-        $this->auth_tokens          = new Cine\Controllers\Auth_Tokens;
+        $this->auth                 = new Cine\Controllers\Auth;
         $this->helpers              = new Cine\Controllers\Helpers;
         $this->last_updated         = new Cine\Controllers\Last_Updated;
         $this->rest_api             = new Cine\Controllers\REST_API;
