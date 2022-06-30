@@ -3,8 +3,9 @@
 
 namespace Cine\Controllers;
 
-
+use Cine\Core\Post_Types;
 use Cine\Core\Taxonomies;
+use WP_Post;
 
 
 defined( 'ABSPATH' ) || exit;
@@ -89,6 +90,22 @@ class Helpers
 		}
 
 		return true;
+	}
+
+
+	/**
+	 * Quick check to confirm provided post or post ID is a movie
+	 *
+	 * @param	int|WP_Post	$post	Post ID or WP_Post
+	 * @return 	bool 				True, if movie
+	 */
+	public static function assert_post_is_movie( int|WP_Post $post ): bool
+	{
+		if( is_int( $post ) ) {
+			$post = get_post( $post );
+		}
+
+		return $post && $post->post_type === Post_Types::POST_TYPE;
 	}
 
 }
