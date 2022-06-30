@@ -18,6 +18,48 @@ abstract class Auth_Tokens
 
 
 	/**
+	 * Get hashed auth token for specific user
+	 *
+	 * @param	int 	$user_id 	User ID
+	 * @return	string|null 		String, if auth token exists; otherwise, null
+	 */
+	public function get_auth_token( int $user_id ): string|null
+	{
+		$app_passwords = WP_Application_Passwords::get_user_application_passwords( $user_id );
+		foreach( $app_passwords as $app_password ) {
+			if( $this->app_name === $app_password['name'] ) {
+				return $app_password['password'];
+			}
+		}
+
+		return null;
+	}
+
+
+	/**
+	 * Create auth token for specific user
+	 *
+	 * @param	int 	$user_id 	User ID
+	 * @throws 	string|WP_Error 	If successful, auth token; otherwise, WP_Error
+	 */
+	public function create_auth_token( int $user_id ): string|WP_Error
+	{
+		$app_args = [
+			'name' => $this->app_name
+		];
+
+		$data = WP_Application_Passwords::create_new_application_password( $user_id, $app_args );
+		
+		// did it work?
+		if( is_wp_error( $data ) ) {
+			return $data;
+		} else {
+			return $data[0];
+		}
+	}	
+
+
+	/**
 	 * Delete preexisting auth token for specific user
 	 *
 	 * @param	int 	$user_id 	User ID
@@ -31,7 +73,7 @@ abstract class Auth_Tokens
 		foreach( $app_passwords as $app_password ) {
 
 			// should only be one
-			if( self::$app_name === $app_password['name'] ) {
+			if( $this->app_name === $app_password['name'] ) {
 				$app_uuid = $app_password['uuid'];
 				break;
 			}
@@ -43,30 +85,6 @@ abstract class Auth_Tokens
 
 		return true;
 	}
-
-
-	/**
-	 * Create auth token for specific user
-	 *
-	 * @param	int 	$user_id 	User ID
-	 * @return	bool 				Always true
-	 * @throws 	string|WP_Error 	If successful, auth token; otherwise, WP_Error
-	 */
-	public function create_auth_token( int $user_id ): string|WP_Error
-	{
-		$app_args = [
-			'name' => self::$app_name
-		];
-
-		$data = WP_Application_Passwords::create_new_application_password( $user_id, $app_args );
-		
-		// did it work?
-		if( is_wp_error( $data ) ) {
-			return $data;
-		} else {
-			return $data[0];
-		}
-	}	
 
 
 	/**
@@ -83,7 +101,7 @@ abstract class Auth_Tokens
 		$user_login = $user->get( 'user_login' );
 		
 		// bail early if auth token isn't registered for user
-		if( !WP_Application_Passwords::application_name_exists_for_user( $user_id, self::$app_name ) ) {
+		if( !WP_Application_Passwords::application_name_exists_for_user( $user_id, $this->app_name ) ) {
 			return false;
 		}
 
