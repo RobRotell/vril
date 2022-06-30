@@ -53,7 +53,7 @@ final class Vril_Utility
 	 * @param	mixed 	$var 	Variable to convert to boolean
 	 * @return 	bool 			Boolean
 	 */
-	public static function convert_to_bool( $var ): bool
+	public static function convert_to_bool( mixed $var ): bool
 	{
 		$result = in_array(
 			$var,
