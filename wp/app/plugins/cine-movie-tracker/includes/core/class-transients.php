@@ -39,7 +39,7 @@ class Transients
 		$taxonomy 	= Taxonomies::TAXONOMY;	
 		
 		add_action( 'save_post_'. $post_type,	[ $this, 'delete_transients' ] );
-		add_filter( 'acf/update_value',			[ $this, 'handle_acf_update' ], 10, 2 );
+		add_filter( 'acf/update_value',			[ $this, 'handle_acf_update' ], 10, 4 );
 
 		add_action( 'edited_' . $taxonomy, 		[ $this, 'delete_transients' ] );
 		add_action( 'create_' . $taxonomy, 		[ $this, 'delete_transients' ] );		
