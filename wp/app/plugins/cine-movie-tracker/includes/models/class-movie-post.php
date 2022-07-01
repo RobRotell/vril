@@ -10,36 +10,17 @@ use NumberFormatter;
 use Vril_Utility;
 use Exception;
 use Cine\Core\Post_Types;
-
+use Cine\Abstracts\Movie;
+use Cine\Model\Production_Company;
 
 defined( 'ABSPATH' ) || exit;
 
 
-class Movie_Block
+class Movie_Post extends Movie
 {
-	public int $id;
-	public string $title;
-	public string $synopsis;
-
 	// for internal usage only
-	private WP_Post $post;
-	private int $tmdb_id;
-	
-	private ?DateTime $release_datetime;
-	public ?string $release_date;
-	public ?int $release_year;
-
-	public bool $to_watch;
-	public bool $watched;
-
-	public string $website;
-	public string $director;
-	public string $writer;
-	public string $budget;
-	public string $box_office;
-	
-	public string $backdrop;
-	public string $poster;
+	public int 		$id_post;
+	public WP_Post	$post; 
 
 
 	/**
@@ -55,16 +36,18 @@ class Movie_Block
 		}
 
 		if( !$post || $post->post_type !== Post_Types::POST_TYPE ) {
-			throw new Exception( 'Movie block cannot be constructed from argument' );
+			throw new Exception( 'Movie cannot be constructed from argument' );
 		}
 
+		$this->id_post 	= $post->ID;
 		$this->post 	= $post;
-		$this->id 		= $post->ID;
-		$this->title 	= $post->post_title;
-		$this->synopsis	= $post->post_content;
+
+		$this->title 	= apply_filters( 'the_title', $post->post_title );
+		$this->synopsis	= apply_filters( 'the_content', $post->post_content );
 
 		$this
 			->populate_meta_props()
+			->populate_credits()
 			->populate_release_props()
 			->populate_image_props();
 	}
@@ -77,19 +60,45 @@ class Movie_Block
 	 */
 	public function populate_meta_props(): self
 	{
-		$this->tmdb_id 		= get_field( 'id_tmdb', $this->id );
-
-		$this->to_watch 	= Vril_Utility::convert_to_bool( get_field( 'to_watch', $this->id ) );
-		$this->watched 		= !$this->to_watch;
-
-		$this->writer		= get_field( 'writer', $this->id );
-		$this->director 	= get_field( 'director', $this->id );
-
-		$this->budget 		= $this->convert_to_dollar( get_field( 'budget', $this->id ) );
-		$this->box_office 	= $this->convert_to_dollar( get_field( 'box_office', $this->id ) );
+		$this->id_tmdb 		= get_field( 'id_tmdb', $this->id_post );
 		
-		$this->website 		= esc_url_raw( get_field( 'website', $this->id ) );
+		$this->to_watch 	= Vril_Utility::convert_to_bool( get_field( 'to_watch', $this->id_post ) );
+		$this->watched 		= !$this->to_watch;
+		
+		$this->website 		= esc_url_raw( get_field( 'website', $this->id_post ) );
+		$this->runtime 		= get_field( 'runtime', $this->id_post );
 
+		$this->budget 		= $this->convert_to_dollar( get_field( 'budget', $this->id_post ) );
+		$this->box_office 	= $this->convert_to_dollar( get_field( 'box_office', $this->id_post ) );
+
+		return $this;
+	}
+
+
+	/**
+	 * Populate props related to movie credits
+	 *
+	 * @return 	self
+	 */
+	public function populate_credits(): self
+	{
+		$writers = get_field( 'writer', $this->id_post );
+		if( !empty( $writers = get_field( 'writer', $this->id_post ) ) ) {
+			$writers = explode( ',', $writers );
+			$this->writers = array_map( 'trim', $writers );
+		}
+
+		$directors = get_field( 'writer', $this->id_post );
+		if( !empty( $directors = get_field( 'director', $this->id_post ) ) ) {
+			$directors = explode( ',', $directors );
+			$this->directors = array_map( 'trim', $directors );
+		}
+
+		$terms = wp_get_object_terms( $this->id_post, Production_Companies::TAXONOMY_KEY );
+		foreach( $terms as $term ) {
+			$this->production_companies[] = new Production_Company( $term );
+		}
+		
 		return $this;
 	}
 

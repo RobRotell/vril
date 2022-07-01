@@ -10,6 +10,7 @@ use Cine\Endpoints\Get_Movies as Endpoint_Get_Movies;
 use Cine\Endpoints\Query_TMDb as Endpoint_Query_TMDb;
 use Cine\Endpoints\Update_Movie as Endpoint_Update_Movie;
 use Cine\Endpoints\Validate_Auth as Endpoint_Validate_Auth;
+use Cine\Endpoints\Add_Movie as Endpoint_Add_Movie;
 
 
 defined( 'ABSPATH' ) || exit;
@@ -59,17 +60,14 @@ class REST_API
 	{
 		require_once( Cine()::$plugin_path_inc . '/endpoints/class-create-auth.php' );
 		require_once( Cine()::$plugin_path_inc . '/endpoints/class-validate-auth.php' );
+
 		require_once( Cine()::$plugin_path_inc . '/endpoints/class-get-movies.php' );
-		require_once( Cine()::$plugin_path_inc . '/endpoints/class-query-tmdb.php' );
-		require_once( Cine()::$plugin_path_inc . '/endpoints/class-delete-movie.php' );
+
+		require_once( Cine()::$plugin_path_inc . '/endpoints/class-add-movie.php' );
 		require_once( Cine()::$plugin_path_inc . '/endpoints/class-update-movie.php' );
-
-		// require_once( Cine()::$plugin_path_inc . '/endpoints/class-get-articles.php' );
-		// require_once( Cine()::$plugin_path_inc . '/endpoints/class-add-article.php' );
-		// require_once( Cine()::$plugin_path_inc . '/endpoints/class-update-article.php' );
-
-		// require_once( Cine()::$plugin_path_inc . '/endpoints/class-validate-auth-token.php' );
-		// require_once( Loa()::$plugin_path_inc . '/endpoints/class-create-auth-token.php' );
+		require_once( Cine()::$plugin_path_inc . '/endpoints/class-delete-movie.php' );
+		
+		require_once( Cine()::$plugin_path_inc . '/endpoints/class-query-tmdb.php' );
 	}
 
 
@@ -82,11 +80,15 @@ class REST_API
 	{
 		$this->endpoints = [
 			'create-auth'	=> new Endpoint_Create_Auth,
-			'delete-movie'	=> new Endpoint_Delete_Movie,
-			'get-movies' 	=> new Endpoint_Get_Movies,
-			'query-tmdb' 	=> new Endpoint_Query_TMDb,
-			'update-movie'	=> new Endpoint_Update_Movie,
 			'validate-auth'	=> new Endpoint_Validate_Auth,
+
+			'get-movies' 	=> new Endpoint_Get_Movies,
+						
+			'add-movie'		=> new Endpoint_Add_Movie,
+			'update-movie'	=> new Endpoint_Update_Movie,
+			'delete-movie'	=> new Endpoint_Delete_Movie,
+
+			'query-tmdb' 	=> new Endpoint_Query_TMDb,
 		];
 	}
 

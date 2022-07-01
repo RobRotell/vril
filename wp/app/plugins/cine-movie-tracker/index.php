@@ -31,6 +31,7 @@ final class Cine
     public $admin_settings_page;
     public $auth;
     public $helpers;
+    public $movies;
     public $last_updated;
     public $rest_api;
     public $tinify;
@@ -70,11 +71,8 @@ final class Cine
 
     private function includes(): void
     {
-        // models
-        // require_once( self::$plugin_path_inc . 'models/class-movie-block.php' );
-        // require_once( self::$plugin_path_inc . 'models/class-search-result.php' );
-        // require_once( self::$plugin_path_inc . 'models/class-new-movie.php' );
-        // require_once( self::$plugin_path_inc . 'models/class-api-response.php' );
+        // abstracts
+        require_once( self::$plugin_path_inc . 'abstracts/abstract-movie.php' );
 
         // controllers
         require_once( self::$plugin_path_inc . 'controllers/class-rest-api.php' );
@@ -85,6 +83,7 @@ final class Cine
         require_once( self::$plugin_path_inc . 'controllers/class-last-updated.php' );
         require_once( self::$plugin_path_inc . 'controllers/class-tinify.php' );
         require_once( self::$plugin_path_inc . 'controllers/class-tmdb.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-movies.php' );
         
         // core
         require_once( self::$plugin_path_inc . 'core/class-post-types.php' );        
@@ -92,7 +91,8 @@ final class Cine
         require_once( self::$plugin_path_inc . 'core/class-transients.php' );
 
         // models
-        require_once( self::$plugin_path_inc . 'models/class-movie-block.php' );
+        require_once( self::$plugin_path_inc . 'models/class-movie-post.php' );
+        require_once( self::$plugin_path_inc . 'models/class-production-company.php' );
         require_once( self::$plugin_path_inc . 'models/class-tmdb-movie.php' );
     }
 
@@ -113,6 +113,7 @@ final class Cine
         $this->auth                 = new Cine\Controllers\Auth;
         $this->helpers              = new Cine\Controllers\Helpers;
         $this->last_updated         = new Cine\Controllers\Last_Updated;
+        $this->movies               = new Cine\Controllers\Movies;
         $this->rest_api             = new Cine\Controllers\REST_API;
         $this->tinify               = new Cine\Controllers\Tinify;
         $this->tmdb                 = new Cine\Controllers\TMDb;

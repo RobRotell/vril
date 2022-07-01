@@ -15,6 +15,7 @@ class TMDb
 	const API_KEY_OPTION_NAME 	= 'cine_tmdb_apikey';
 	const API_URL 				= 'https://api.themoviedb.org/3';
 	const IMAGE_URL 			= 'https://image.tmdb.org/t/p';
+	const POST_META_FIELD 		= 'id_tmdb';
 
 	
 	/**
@@ -113,7 +114,7 @@ class TMDb
 	 * @param	int		$id 	Movie ID
 	 * @return	object 			Movie details 
 	 */
-	public static function find_movie_details( int $id ): object
+	public static function fetch_movie_details( int $id ): object
 	{
 		$slug = sprintf( 'movie/%d', $id );
 
@@ -127,7 +128,7 @@ class TMDb
 	 * @param	int		$id 	Movie ID
 	 * @return	object 			Movie details 
 	 */
-	public static function find_movie_credits( int $id ): object
+	public static function fetch_movie_credits( int $id ): object
 	{
 		$slug = sprintf( 'movie/%d/credits', $id );
 

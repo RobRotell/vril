@@ -6,6 +6,7 @@ namespace Cine\Endpoints;
 
 use Cine\Controllers\Helpers;
 use Cine\Controllers\REST_API;
+use Cine\Controllers\Movies;
 use Cine\Core\Post_Types;
 use Cine\Core\Taxonomies;
 use Cine\Core\Transients;
@@ -21,10 +22,10 @@ use WP_REST_Server;
 defined( 'ABSPATH' ) || exit;
 
 
-final class Get_Movies extends \Vril\Core_Classes\REST_API_Endpoint
+final class Add_Movie extends \Vril\Core_Classes\REST_API_Endpoint
 {
 	protected $namespace	= REST_API::NAMESPACE;
-	public string $route	= 'movies';
+	public string $route	= 'movies/(?P<id>[\d]+)';
 	public string $method	= WP_REST_Server::CREATABLE;
 
 
@@ -54,7 +55,7 @@ final class Get_Movies extends \Vril\Core_Classes\REST_API_Endpoint
 				'sanitize_callback'	=> 'absint',
 				'type'				=> 'string',
 			],
-			'to_watch' => [
+			'watched' => [
 				'default'			=> false,
 				'sanitize_callback' => [ 'Vril_Utility', 'convert_to_bool' ],
 				'type'				=> 'string',
@@ -71,13 +72,27 @@ final class Get_Movies extends \Vril\Core_Classes\REST_API_Endpoint
 	 */
 	public function handle_request( WP_Rest_Request $req ): WP_REST_Response|WP_Error
 	{
-		$params = $req->get_params();
+		// tmdb is valid ID
+		// movie already exists
+			// maybe update
+		// add movie
 
-		// prep response object
-		$res = $this->create_response_obj( 'movies', 'meta', 'params' );
-		$res->add_data( 'params', $params );
+		$tmdb_id = $req->get_param( 'id' );
+		$watched = $req->get_param( 'watched' );
+
+		$res = $this->create_response_obj( 'movie' );
 		
 		try {
+			// movie already exists?
+			$movie_post_id = Movies::get_movie_post_id_by_tmdb_id( $tmdb_id );
+			if( !$movie_post_id ) {
+				$movie_post_id = Movies::create_movie_from_tmdb_id( $tmdb_id );
+			}
+
+			var_dump( $movie_post_id );
+			die;
+
+
 
 			// data will contain "movies" and "meta" props
 			$data = $this->get_from_transients( $params );
@@ -96,106 +111,4 @@ final class Get_Movies extends \Vril\Core_Classes\REST_API_Endpoint
 		return rest_ensure_response( $res->package() );			
 	}
 
-
-	/**
-	 * Get movies (and query meta) from transients
-	 *
-	 * @param 	array 	$params 	Request params
-	 * @return 	array|false 		Array of "meta" and "movies" if transient found; otherwise, false
-	 */
-	private function get_from_transients( array $params ): array|false
-	{
-		$transient_key 		= sprintf( 'get_movies_%s', http_build_query( $params ) );
-		$transient_value 	= Transients::get_transient( $transient_key );
-
-		if( isset( $transient_value['meta'] ) && isset( $transient_value['movies'] ) ) {
-			return $transient_value;
-		}
-
-		return false;
-	}
-
-
-	/**
-	 * Get movies (and query meta) from WP query
-	 *
-	 * @param 	array 	$params 	Request params
-	 * @return	array 				Contains "meta" and "movies" props
-	 */
-	private function get_from_query( array $params ): array
-	{
-		$meta	= [];
-		$movies = [];
-
-		[
-			'count' 	=> $count,
-			'genre' 	=> $genre,
-			'id' 		=> $id,
-			'keyword' 	=> $keyword,
-			'page' 		=> $page,
-			'to_watch'	=> $to_watch,
-		] = $params;
-
-		$query_args = [
-			'fields'			=> 'ids',
-			'order'				=> 'ASC',
-			'orderby'			=> 'title',
-			'paged'				=> $page,
-			'post_type' 		=> Post_Types::POST_TYPE,
-			'posts_per_page' 	=> $count,
-		];
-
-		// querying for specific movie?
-		if( !empty( $id ) ) {
-			$query_args['post__in'] = (array)$id;
-
-		} else {
-
-			// querying for specific category of movies?
-			if( !empty( $genre ) ) {
-				$query_args['tax_query'] = [
-					[
-						'field'		=> 'term_id',
-						'taxonomy' 	=> Taxonomies::TAXONOMY,
-						'terms' 	=> $genre,
-					]
-				];
-			}
-
-			// querying movies by keyword?
-			if( !empty( $keyword ) ) {
-				$query_args['s'] = $keyword;
-			}
-
-			// querying movies by whether they've been watched or not?
-			if( $to_watch ) {
-				$query_args['meta_query'] = [
-					[
-						'key' 	=> 'to_watch',
-						'value'	=> true,
-					]
-				];
-			}
-		}
-
-		$query = new WP_Query( $query_args );
-		
-		// convert movie posts in movie blocks with specific movie info
-		foreach( $query->posts as $post_id ) {
-			$movie 		= new Movie_Block( $post_id );
-			$movies[] 	= get_object_vars( $movie );
-		}
-
-		// used to determine if more pages of posts or if last page (e.g. total / page)
-		$meta['post_count']		= $query->post_count;
-		$meta['total_posts'] 	= $query->found_posts;
-
-		$data = compact( 'meta', 'movies' );
-
-		// save transient for later queries
-		$transient_key = sprintf( 'get_movies_%s', http_build_query( $params ) );
-		Transients::set_transient( $transient_key, null, $data );
-
-		return $data;
-	}
 }
