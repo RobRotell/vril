@@ -4,16 +4,10 @@
 namespace Cine\Endpoints;
 
 
-use Cine\Controllers\Helpers;
 use Cine\Controllers\REST_API;
 use Cine\Controllers\Movies;
-use Cine\Core\Post_Types;
-use Cine\Core\Taxonomies;
-use Cine\Core\Transients;
-use Cine\Models\Movie_Block;
+use Cine\Models\Frontend_Movie;
 use WP_Error;
-use WP_Query;
-use WP_REST_Controller;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
@@ -89,20 +83,9 @@ final class Add_Movie extends \Vril\Core_Classes\REST_API_Endpoint
 				$movie_post_id = Movies::create_movie_from_tmdb_id( $tmdb_id );
 			}
 
-			var_dump( $movie_post_id );
-			die;
+			$movie = new Frontend_Movie( $movie_post_id );
 
-
-
-			// data will contain "movies" and "meta" props
-			$data = $this->get_from_transients( $params );
-			if( empty( $data ) ) {
-				$data = $this->get_from_query( $params );
-			}
-
-			$res
-				->add_data( 'meta', $data['meta'] )
-				->add_data( 'movies', $data['movies'] );
+			$res->add_data( 'movie', $movie );
 
 		} catch( Throwable $e ) {
 			$res->set_error( $e->getMessage() );

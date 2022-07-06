@@ -7,7 +7,6 @@ namespace Cine\Controllers;
 use Cine\Core\Post_Types;
 use WP_Post;
 use Cine\Controllers\TMDb;
-use Cine\Models\Movie_To_Add;
 
 
 defined( 'ABSPATH' ) || exit;
@@ -85,14 +84,17 @@ class Movies
 			return $post_id;
 		}
 
-		$movie = new Movie_To_Add( $id );
-		$movie
-			->process_data_from_tmdb();
+		$movie_details = TMDb::fetch_movie_details( $id );
+		$movie_credits = TMDb::fetch_movie_credits( $id );
 
+		print_r( $movie_details );
+		print_r( $movie_credits );
 		die;
-		// 	->save();
 
-		// return $movie->get_post_id();
+
+
+
+		return 0;
 	}
 
 }

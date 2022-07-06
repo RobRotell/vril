@@ -7,7 +7,7 @@ namespace Cine\Endpoints;
 use Cine\Controllers\REST_API;
 use Cine\Controllers\TMDb;
 use Cine\Core\Transients;
-use Cine\Model\TMDb_Movie;
+use Cine\Model\TMDb_Movie_Result;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
@@ -134,7 +134,7 @@ final class Query_TMDb extends \Vril\Core_Classes\REST_API_Endpoint
 		$search_results = TMDb::find_movie_by_title( $title, $page );
 		
 		foreach( $search_results['page_results'] as $raw_tmdb_movie ) {
-			$result = new TMDb_Movie( $raw_tmdb_movie );
+			$result = new TMDb_Movie_Result( $raw_tmdb_movie );
 			$results[] = get_object_vars( $result );
 		}
 

@@ -16,7 +16,7 @@ use Cine\Model\Production_Company;
 defined( 'ABSPATH' ) || exit;
 
 
-class Movie_Post extends Movie
+class Frontend_Movie extends Movie
 {
 	// for internal usage only
 	public int 		$id_post;

@@ -4,7 +4,7 @@
 namespace Cine\Controllers;
 
 use Cine\Core\Post_Types;
-use Cine\Core\Taxonomies;
+use Cine\Core\Taxonomy_Genres;
 use WP_Post;
 
 
@@ -23,7 +23,7 @@ class Helpers
 	 */
 	public static function get_genre_by_name( string $name, bool $id_only = false ) 
 	{
-		$taxonomy = Taxonomies::TAXONOMY;
+		$taxonomy = Taxonomy_Genres::TAXONOMY_KEY;
 
 		$term = get_terms(
 			[
@@ -105,7 +105,7 @@ class Helpers
 			$post = get_post( $post );
 		}
 
-		return $post && $post->post_type === Post_Types::POST_TYPE;
+		return $post && $post->post_type === Post_Types::POST_TYPE_KEY;
 	}
 
 }

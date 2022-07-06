@@ -27,19 +27,20 @@ final class Cine
 
 
     // controller subclasses
-    public $admin_columns;
-    public $admin_settings_page;
     public $auth;
     public $helpers;
     public $movies;
-    public $last_updated;
     public $rest_api;
     public $tinify;
     public $tmdb;
 
     // core subclasses
+    public $admin_columns;
+    public $admin_settings_page;
+    public $last_updated;
     public $post_types;
-    public $taxonomies;
+    public $taxonomy_genres;
+    public $taxonomy_production_companies;
     public $transients;
 
 
@@ -75,25 +76,28 @@ final class Cine
         require_once( self::$plugin_path_inc . 'abstracts/abstract-movie.php' );
 
         // controllers
-        require_once( self::$plugin_path_inc . 'controllers/class-rest-api.php' );
-        require_once( self::$plugin_path_inc . 'controllers/class-admin-columns.php' );
-        require_once( self::$plugin_path_inc . 'controllers/class-admin-settings-page.php' );
         require_once( self::$plugin_path_inc . 'controllers/class-auth.php' );
         require_once( self::$plugin_path_inc . 'controllers/class-helpers.php' );
-        require_once( self::$plugin_path_inc . 'controllers/class-last-updated.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-movies.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-rest-api.php' );
         require_once( self::$plugin_path_inc . 'controllers/class-tinify.php' );
         require_once( self::$plugin_path_inc . 'controllers/class-tmdb.php' );
-        require_once( self::$plugin_path_inc . 'controllers/class-movies.php' );
+        require_once( self::$plugin_path_inc . 'controllers/class-genres.php' );
         
         // core
-        require_once( self::$plugin_path_inc . 'core/class-post-types.php' );        
-        require_once( self::$plugin_path_inc . 'core/class-taxonomies.php' );
+        require_once( self::$plugin_path_inc . 'core/class-admin-columns.php' );
+        require_once( self::$plugin_path_inc . 'core/class-admin-settings-page.php' );
+        require_once( self::$plugin_path_inc . 'core/class-last-updated.php' );
+        require_once( self::$plugin_path_inc . 'core/class-post-types.php' );
+        require_once( self::$plugin_path_inc . 'core/class-taxonomy-genres.php' );
+        require_once( self::$plugin_path_inc . 'core/class-taxonomy-production-companies.php' );
         require_once( self::$plugin_path_inc . 'core/class-transients.php' );
 
         // models
-        require_once( self::$plugin_path_inc . 'models/class-movie-post.php' );
+        require_once( self::$plugin_path_inc . 'models/class-frontend-movie.php' );
         require_once( self::$plugin_path_inc . 'models/class-production-company.php' );
-        require_once( self::$plugin_path_inc . 'models/class-tmdb-movie.php' );
+        require_once( self::$plugin_path_inc . 'models/class-tmdb-movie-result.php' );
+        require_once( self::$plugin_path_inc . 'models/class-movie-to-add.php' );
     }
 
 
@@ -108,19 +112,21 @@ final class Cine
 
     public function load_classes(): void
     {
-        $this->admin_columns        = new Cine\Controllers\Admin_Columns;
-        $this->admin_settings_page  = new Cine\Controllers\Admin_Settings_Page;
-        $this->auth                 = new Cine\Controllers\Auth;
-        $this->helpers              = new Cine\Controllers\Helpers;
-        $this->last_updated         = new Cine\Controllers\Last_Updated;
-        $this->movies               = new Cine\Controllers\Movies;
-        $this->rest_api             = new Cine\Controllers\REST_API;
-        $this->tinify               = new Cine\Controllers\Tinify;
-        $this->tmdb                 = new Cine\Controllers\TMDb;
-
-        $this->post_types           = new Cine\Core\Post_Types;
-        $this->taxonomies           = new Cine\Core\Taxonomies;
-        $this->transients           = new Cine\Core\Transients;
+        $this->auth     = new Cine\Controllers\Auth;
+        $this->helpers  = new Cine\Controllers\Helpers;
+        $this->movies   = new Cine\Controllers\Movies;
+        $this->rest_api = new Cine\Controllers\REST_API;
+        $this->tinify   = new Cine\Controllers\Tinify;
+        $this->tmdb     = new Cine\Controllers\TMDb;
+        $this->genres   = new Cine\Controllers\Genres;
+        
+        $this->admin_columns                    = new Cine\Core\Admin_Columns;
+        $this->admin_settings_page              = new Cine\Core\Admin_Settings_Page;
+        $this->last_updated                     = new Cine\Core\Last_Updated;
+        $this->post_types                       = new Cine\Core\Post_Types;
+        $this->taxonomy_genres                  = new Cine\Core\Taxonomy_Genres;
+        $this->taxonomy_production_companies    = new Cine\Core\Taxonomy_Production_Companies;
+        $this->transients                       = new Cine\Core\Transients;
     }
 
 }

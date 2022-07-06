@@ -1,12 +1,10 @@
 <?php
 
 
-namespace Cine\Controllers;
+namespace Cine\Core;
 
 
 use Cine\Core\Post_Types;
-use Cine\Core\Taxonomies;
-use WP_Post;
 
 
 defined( 'ABSPATH' ) || exit;
@@ -22,7 +20,7 @@ class Admin_Columns
 	
 	private function add_wp_hooks()
 	{
-		$post_type = Post_Types::POST_TYPE;
+		$post_type = Post_Types::POST_TYPE_KEY;
 
         add_action( 'manage_' . $post_type . '_posts_custom_column', 	[ $this, 'populate_columns' ], 10, 2 );		
 		add_filter( 'manage_' . $post_type . '_posts_columns', 			[ $this, 'add_columns' ] );

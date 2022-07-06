@@ -33,6 +33,7 @@ abstract class Movie
 	public ?string 	$budget;
 	public ?string 	$box_office;
 
+	public ?array 	$genres;
 	public ?array 	$production_companies;
 
 	public ?int 	$image_id_backdrop;

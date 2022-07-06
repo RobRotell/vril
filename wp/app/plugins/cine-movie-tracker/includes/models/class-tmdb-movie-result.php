@@ -13,21 +13,21 @@ use Vril_Utility;
 defined( 'ABSPATH' ) || exit;
 
 
-class TMDb_Movie
+class TMDb_Movie_Result
 {
-	private ?int $wp_post_id; 
+	private ?int 	$wp_post_id; 
 
-	public int $tmdb_id; 
-	public string $title;	
-	public string $synopsis;
+	public int 		$id_tmdb; 
+	public string 	$title;	
+	public string 	$synopsis;
 
-	public ?string $release_date;
-	public ?int $release_year;
+	public ?string 	$release_date;
+	public ?int 	$release_year;
 	
-	public ?string $poster; 	
+	public ?string 	$poster; 	
 
-	public bool $added 		= false;
-	public ?bool $to_watch 	= null; 
+	public bool 	$added = false;
+	public ?bool 	$to_watch = null; 
 	
 
 	/**
@@ -37,7 +37,7 @@ class TMDb_Movie
 	 */
 	public function __construct( object $data )
 	{
-		$this->tmdb_id 	= absint( $data->id );
+		$this->id_tmdb 	= absint( $data->id );
 		$this->title 	= TMDb::sanitize_convert_string( $data->title );
 		$this->synopsis = TMDb::sanitize_convert_string( $data->overview );
 
@@ -73,8 +73,8 @@ class TMDb_Movie
 		$movie_ids = get_posts(
 			[
 				'meta_key'			=> 'id_tmdb',
-				'meta_value'		=> $this->tmdb_id,
-				'post_type'			=> Post_Types::POST_TYPE,
+				'meta_value'		=> $this->id_tmdb,
+				'post_type'			=> Post_Types::POST_TYPE_KEY,
 				'posts_per_page'	=> 1,
 				'fields'			=> 'ids',
 			]

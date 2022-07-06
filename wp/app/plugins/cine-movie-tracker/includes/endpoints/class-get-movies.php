@@ -8,6 +8,7 @@ use Cine\Controllers\Helpers;
 use Cine\Controllers\REST_API;
 use Cine\Core\Post_Types;
 use Cine\Core\Taxonomies;
+use Cine\Core\Taxonomy_Genres;
 use Cine\Core\Transients;
 use Cine\Models\Movie_Block;
 use WP_Error;
@@ -161,7 +162,7 @@ final class Get_Movies extends \Vril\Core_Classes\REST_API_Endpoint
 			'order'				=> 'ASC',
 			'orderby'			=> 'title',
 			'paged'				=> $page,
-			'post_type' 		=> Post_Types::POST_TYPE,
+			'post_type' 		=> Post_Types::POST_TYPE_KEY,
 			'posts_per_page' 	=> $count,
 		];
 
@@ -172,11 +173,12 @@ final class Get_Movies extends \Vril\Core_Classes\REST_API_Endpoint
 		} else {
 
 			// querying for specific category of movies?
+			// todo — add support for production companies?
 			if( !empty( $genre ) ) {
 				$query_args['tax_query'] = [
 					[
 						'field'		=> 'term_id',
-						'taxonomy' 	=> Taxonomies::TAXONOMY,
+						'taxonomy' 	=> Taxonomy_Genres::TAXONOMY_KEY,
 						'terms' 	=> $genre,
 					]
 				];
@@ -202,7 +204,7 @@ final class Get_Movies extends \Vril\Core_Classes\REST_API_Endpoint
 		
 		// convert movie posts in movie blocks with specific movie info
 		foreach( $query->posts as $post_id ) {
-			$movie 		= new Movie_Block( $post_id );
+			$movie 		= new Frontend_Movie( $post_id );
 			$movies[] 	= get_object_vars( $movie );
 		}
 

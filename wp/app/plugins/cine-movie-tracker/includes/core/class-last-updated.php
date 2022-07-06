@@ -1,11 +1,12 @@
 <?php
 
 
-namespace Cine\Controllers;
+namespace Cine\Core;
 
 
 use Cine\Core\Post_Types;
-use Cine\Core\Taxonomies;
+use Cine\Core\Taxonomy_Genres;
+use Cine\Core\Taxonomy_Production_Companies;
 
 
 defined( 'ABSPATH' ) || exit;
@@ -34,14 +35,28 @@ class Last_Updated
 	 */	
 	private function add_wp_hooks()
 	{
-		$post_type	= Post_Types::POST_TYPE;
-		$taxonomy 	= Taxonomies::TAXONOMY;	
+		add_filter( 
+			'acf/update_value',
+			[ $this, 'handle_acf_update' ], 
+			10, 4 
+		);
 		
-		add_action( 'save_post_'. $post_type,	[ $this, 'update_timestamp' ] );
-		add_filter( 'acf/update_value',			[ $this, 'handle_acf_update' ], 10, 4 );
+		add_action( 
+			'save_post_'. Post_Types::POST_TYPE_KEY,
+			[ $this, 'update_timestamp' ] 
+		);
+		
+		foreach( [ Taxonomy_Genres::TAXONOMY_KEY, Taxonomy_Production_Companies::TAXONOMY_KEY ] as $taxonomy ) {
+			add_action( 
+				'create_' . $taxonomy,
+				[ $this, 'update_timestamp' ] 
+			);
 
-		add_action( 'edited_' . $taxonomy, 		[ $this, 'update_timestamp' ] );
-		add_action( 'create_' . $taxonomy, 		[ $this, 'update_timestamp' ] );		
+			add_action( 
+				'edited_' . $taxonomy,
+				[ $this, 'update_timestamp' ] 
+			);
+		}
 	}
 
 
@@ -82,7 +97,7 @@ class Last_Updated
 		if( $value !== $orig_value ) {
 			$post = get_post( $post_id );
 
-			if( !empty( $post ) && $post->post_type === Post_Types::POST_TYPE ) {
+			if( !empty( $post ) && $post->post_type === Post_Types::POST_TYPE_KEY ) {
 				self::update_timestamp();
 			}
 		}

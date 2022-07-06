@@ -5,7 +5,7 @@ namespace Cine\Model;
 
 
 use WP_Term;
-use Cine\Core\Taxonomies\Production_Companies;
+use Cine\Core\Taxonomy_Production_Companies;
 
 
 defined( 'ABSPATH' ) || exit;
@@ -13,7 +13,7 @@ defined( 'ABSPATH' ) || exit;
 
 class Production_Company
 {
-	public $taxonomy = Production_Companies::TAXONOMY_KEY;
+	public $taxonomy = Taxonomy_Production_Companies::TAXONOMY_KEY;
 
 	public int $id_term;
 	public WP_Term $term;

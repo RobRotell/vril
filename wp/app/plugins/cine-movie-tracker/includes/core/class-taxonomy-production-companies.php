@@ -1,13 +1,13 @@
 <?php
 
 
-namespace Cine\Core\Taxonomies;
+namespace Cine\Core;
 
 
-defined( 'ABSPATH' ) || exit;
+defined('ABSPATH') || exit;
 
 
-class Production_Companies
+class Taxonomy_Production_Companies
 {
     const TAXONOMY_KEY          = 'production-company';
     const TAXONOMY_KEY_PLURAL   = 'production-companies';
@@ -15,26 +15,26 @@ class Production_Companies
     const TAXONOMY_LABEL_PLURAL = 'Production Companies';
 
 
-	public function __construct()
-	{
-		$this->add_wp_hooks();
-	}
+    public function __construct()
+    {
+        $this->add_wp_hooks();
+    }
 
 
-	private function add_wp_hooks()
-	{
-        add_action( 
-            'init', 
-            [ $this, 'add_taxonomy' ] 
+    private function add_wp_hooks()
+    {
+        add_action(
+            'init',
+            [ $this, 'add_taxonomy' ]
         );
-	}
+    }
 
 
     public function add_taxonomy()
     {
-        register_taxonomy( 
-            self::TAXONOMY_KEY, 
-            Post_Types::POST_TYPE,
+        register_taxonomy(
+            self::TAXONOMY_KEY,
+            Post_Types::POST_TYPE_KEY,
             [
                 'label'             => self::TAXONOMY_KEY_PLURAL,
                 'show_tagcloud'     => false,
@@ -46,5 +46,4 @@ class Production_Companies
             ]
         );
     }
-    
 }

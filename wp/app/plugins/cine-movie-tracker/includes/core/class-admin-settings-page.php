@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Cine\Controllers;
+namespace Cine\Core;
 
 
 use Cine\Controllers\Last_Updated;
@@ -39,7 +39,7 @@ class Admin_Settings_Page
 	public function add_settings_page(): void
 	{
 		add_submenu_page(
-			sprintf( 'edit.php?post_type=%s', Post_Types::POST_TYPE ),
+			sprintf( 'edit.php?post_type=%s', Post_Types::POST_TYPE_KEY ),
 			'Cine Settings',
 			'Settings',
 			'manage_options',
