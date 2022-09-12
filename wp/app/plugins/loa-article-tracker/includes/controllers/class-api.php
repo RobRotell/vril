@@ -49,6 +49,8 @@ class API
 
 		require_once( Loa()::$plugin_path_inc . '/endpoints/class-validate-auth-token.php' );
 		require_once( Loa()::$plugin_path_inc . '/endpoints/class-create-auth-token.php' );
+
+		require_once( Loa()::$plugin_path_inc . '/endpoints/class-get-meta.php' );
 	}
 
 
@@ -67,6 +69,8 @@ class API
 		
 		$this->endpoints['validate-auth-token'] = new \Loa\Endpoints\Validate_Auth_Token();
 		$this->endpoints['create-auth-token'] 	= new \Loa\Endpoints\Create_Auth_Token();
+
+		$this->endpoints['get-meta'] 			= new \Loa\Endpoints\Get_Meta();
 	}
 
 
