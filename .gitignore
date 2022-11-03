@@ -3,6 +3,13 @@
 !wp
 !app.js
 !package.json
+!docker-compose.yml
+!proxy
+
+proxy/*
+!proxy/conf
+!proxy/cert
+
 
 wp/*
 !wp/wp-config.php

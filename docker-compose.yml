@@ -1,0 +1,53 @@
+version: "3" 
+# Defines which compose version to use
+services:
+  # Services line define which Docker images to run. In this case, it will be MySQL server and WordPress image.
+  db:
+    image: mysql:5.7
+    # image: mysql:5.7 indicates the MySQL database container image from Docker Hub used in this installation.
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: project
+      MYSQL_DATABASE: vrilapp
+      MYSQL_USER: project
+      MYSQL_PASSWORD: project
+      # Previous four lines define the main variables needed for the MySQL container to work: database, database username, database user password, and the MySQL root password.
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    restart: always
+    environment:
+      PMA_HOST: db
+      PMA_USER: project
+      PMA_PASSWORD: project
+    ports:
+      - "1234:1234"
+  wordpress:
+    depends_on:
+      - db
+    image: wordpress:6.0-php8.1-apache
+    restart: always
+    # Restart line controls the restart mode, meaning if the container stops running for any reason, it will restart the process immediately.
+    ports:
+      - "8080:80"
+      # The previous line defines the port that the WordPress container will use. After successful installation, the full path will look like this: http://localhost:8000
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: project
+      WORDPRESS_DB_PASSWORD: project
+      WORDPRESS_DB_NAME: vrilapp
+      WORDPRESS_TABLE_PREFIX: nvvdjsk3_
+# Similar to MySQL image variables, the last four lines define the main variables needed for the WordPress container to work properly with the MySQL container.
+    volumes:
+      ["./:/var/www/html"]
+  proxy:
+    image: nginx:1.19.10-alpine
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./proxy/conf/nginx.conf:/etc/nginx/nginx.conf
+      - ./proxy/certs:/etc/nginx/certs
+    depends_on:
+      - wordpress
+volumes:
+  mysql: {}
