@@ -21,13 +21,12 @@ class TMDb_Movie_Result
 	public string 	$title;	
 	public string 	$synopsis;
 
-	public ?string 	$release_date;
-	public ?int 	$release_year;
+	public string 	$release_year = '';
 	
-	public ?string 	$poster; 	
+	public string 	$poster = '';	
 
 	public bool 	$added = false;
-	public ?bool 	$to_watch = null; 
+	public bool 	$to_watch = false; 
 	
 
 	/**
@@ -45,10 +44,7 @@ class TMDb_Movie_Result
 		if( !empty( $release_date ) ) {
 			try { 
 				$release_date = new DateTime( $data->release_date );
-	
-				$this->release_date = $release_date->format( 'Y-m-d' );
 				$this->release_year = $release_date->format( 'Y' );
-	
 			} catch( Exception $e ) {
 				// intentionally empty
 			}
@@ -91,5 +87,24 @@ class TMDb_Movie_Result
 
 		return $this;
 	}
+
+
+	/**
+	 * Extract specific movie properties
+	 *
+	 * @param	array
+	 */
+	public function package(): array
+	{
+		return [
+			'id' 			=> $this->id_tmdb,
+			'title' 		=> $this->title,
+			'synopsis' 		=> $this->synopsis,
+			'release_year' 	=> $this->release_year,
+			'poster' 		=> $this->poster,
+			'added' 		=> $this->added,
+			'to_watch' 		=> $this->to_watch,
+		];
+	}	
 
 }

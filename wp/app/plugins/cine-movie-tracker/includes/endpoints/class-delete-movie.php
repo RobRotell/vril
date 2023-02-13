@@ -21,21 +21,41 @@ defined( 'ABSPATH' ) || exit;
 final class Delete_Movie extends \Vril\Core_Classes\REST_API_Endpoint
 {
 	protected $namespace	= REST_API::NAMESPACE;
-	public string $route	= 'movies/(?P<id>[\d]+)';
+	public string $route	= 'movie/(?P<id>[\d]+)';
 	public string $method	= WP_REST_Server::DELETABLE;
 
 
 	/**
 	 * Handle permission check for endpoint
 	 *
-	 * @return 	bool 	True, if user can edit posts
+	 * @return 	bool|WP_Error 	True, if user can edit posts; otherwise, WP_Error
 	 */
-	public function check_permission( WP_REST_Request $request ): bool
+	public function check_permission( WP_REST_Request $request ): bool|WP_Error
 	{
 		// username and app password should be passed via Authorization header
 		$current_user = wp_get_current_user();
 
-		return $current_user->has_cap( 'edit_posts' );
+		if( 0 === $current_user->ID ) {
+			return new WP_Error(
+				'cine/endpoint/delete_movie/invalid_user',
+				'Invalid authorization. Check your authorization and try again.',
+				[ 
+					'status' => 401
+				]
+			);
+		}
+
+		if( !$current_user->has_cap( 'edit_posts' ) ) {
+			return new WP_Error(
+				'cine/endpoint/delete_movie/invalid_permissions',
+				'You are not permitted to delete a movie.',
+				[ 
+					'status' => 403
+				]
+			);
+		}
+
+		return true;
 	}	
 
 
@@ -70,7 +90,7 @@ final class Delete_Movie extends \Vril\Core_Classes\REST_API_Endpoint
 		$id = $req->get_param( 'id' );
 
 		// prep response object
-		$res = $this->create_response_obj( 'deleted' );
+		$res = new WP_REST_Response();		
 		
 		try {
 			$post = get_post( $id );
@@ -88,16 +108,27 @@ final class Delete_Movie extends \Vril\Core_Classes\REST_API_Endpoint
 			if( !$deleted ) {
 				throw new Exception(
 					sprintf( 'Failed to delete movie: "%s" (ID: "%s")', $post->post_title, $id ),
+					500
 				);
 			}
 
-			$res->add_data( 'deleted', true );
+			$res->set_data(
+				[
+					'deleted' => true
+				]
+			);
+			$res->set_status( 200 );
 
 		} catch( Throwable $e ) {
-			$res->set_error( $e->getMessage(), $e->getCode() );
+			$res->set_data(
+				[
+					'error' => $e->getMessage()
+				]
+			);
+			$res->set_status( $e->getCode() );
 		}
 
-		return rest_ensure_response( $res->package() );			
+		return rest_ensure_response( $res );			
 	}
 
 

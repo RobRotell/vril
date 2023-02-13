@@ -45,7 +45,7 @@ class Post_Types
 				'show_in_rest'          => true,
 				'show_ui'               => true,
 				'supports'              => [ 'title', 'editor', 'thumbnail' ],
-				'taxonomies'            => [ Taxonomy_Genres::TAXONOMY_KEY, Taxonomy_Production_Companies::TAXONOMY_KEY ],
+				'taxonomies'            => [ Taxonomy_Genres::TAXONOMY_KEY ],
 				'labels'                => [
 					'name'                      => 'Movies',
 					'singular_name'             => 'Movie',

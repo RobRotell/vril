@@ -95,7 +95,6 @@ class TMDb
 	 */
 	public static function find_movie_by_title( string $title, int $page = 1 ): array
 	{
-		$page = 1;
 		$slug = 'search/movie';
 		
 		$res = self::fetch( $slug, $title, $page );

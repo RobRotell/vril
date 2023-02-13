@@ -28,7 +28,7 @@ final class Create_Auth extends \Vril\Core_Classes\REST_API_Endpoint
 	 *
 	 * @return 	bool 	True, if user can edit posts
 	 */
-	public function check_permission( WP_REST_Request $request ): bool
+	public function check_permission( WP_REST_Request $request ): bool|WP_Error
 	{
 		$username = $request->get_param( 'username' );
 		$user_id = username_exists( $username );
@@ -83,14 +83,14 @@ final class Create_Auth extends \Vril\Core_Classes\REST_API_Endpoint
 		$auth = Cine()->auth;
 
 		// prep response object
-		$res = $this->create_response_obj( 'auth' );
+		$res = new WP_REST_Response();
 
 		try {
 			// valid user creds?
 			$user = wp_authenticate_username_password( null, $username, $password );
 
 			if( is_wp_error( $user ) ) {
-				throw new Exception( 'Invalid user credentials', 401 );
+				throw new Exception( 'Invalid user credentials.', 401 );
 			}
 			$user_id = absint( $user->get( 'ID' ) );
 
@@ -101,19 +101,26 @@ final class Create_Auth extends \Vril\Core_Classes\REST_API_Endpoint
 			$token = $auth->create_auth_token( $user_id );
 
 			if( is_wp_error( $token ) ) {
-				throw new Exception( $token->get_error_message(), $token->get_error_code() );
-			} else {
-				$res->add_data( 'auth', $token );
-			}
+				throw new Exception( $token->get_error_message(), 500 );
+			} 
+			
+			$res->set_data(
+				[
+					'auth' => $token
+				]
+			);
+			$res->set_status( 200 );
 			
 		} catch( Throwable $e ) {
-			$res->set_error( 
-				$e->getMessage(), 
-				$e->getCode() 
+			$res->set_data(
+				[
+					'error' => $e->getMessage(),
+				]
 			);
+			$res->set_status( $e->getCode() );
 		}
 
-		return rest_ensure_response( $res->package() );			
+		return rest_ensure_response( $res );
 	}
 
 }

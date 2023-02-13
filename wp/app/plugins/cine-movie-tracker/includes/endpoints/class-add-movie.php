@@ -21,7 +21,7 @@ defined( 'ABSPATH' ) || exit;
 final class Add_Movie extends \Vril\Core_Classes\REST_API_Endpoint
 {
 	protected $namespace	= REST_API::NAMESPACE;
-	public string $route	= 'movies/(?P<id>[\d]+)';
+	public string $route	= 'movies';
 	public string $method	= WP_REST_Server::CREATABLE;
 
 

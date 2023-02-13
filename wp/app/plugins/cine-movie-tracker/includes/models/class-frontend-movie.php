@@ -13,6 +13,7 @@ use Cine\Core\Post_Types;
 use Cine\Abstracts\Movie;
 use Cine\Model\Production_Company;
 
+
 defined( 'ABSPATH' ) || exit;
 
 
@@ -20,7 +21,7 @@ class Frontend_Movie extends Movie
 {
 	// for internal usage only
 	public int 		$id_post;
-	public WP_Post	$post; 
+	private WP_Post	$post; 
 
 
 	/**
@@ -35,7 +36,7 @@ class Frontend_Movie extends Movie
 			$post = get_post( $post );
 		}
 
-		if( !$post || $post->post_type !== Post_Types::POST_TYPE ) {
+		if( !$post || $post->post_type !== Post_Types::POST_TYPE_KEY ) {
 			throw new Exception( 'Movie cannot be constructed from argument' );
 		}
 
@@ -43,13 +44,13 @@ class Frontend_Movie extends Movie
 		$this->post 	= $post;
 
 		$this->title 	= apply_filters( 'the_title', $post->post_title );
-		$this->synopsis	= apply_filters( 'the_content', $post->post_content );
+		// $this->synopsis	= apply_filters( 'the_content', $post->post_content );
 
-		$this
-			->populate_meta_props()
-			->populate_credits()
-			->populate_release_props()
-			->populate_image_props();
+		// $this
+		// 	->populate_meta_props()
+		// 	->populate_credits()
+		// 	->populate_release_props()
+		// 	->populate_image_props();
 	}
 
 
@@ -94,10 +95,10 @@ class Frontend_Movie extends Movie
 			$this->directors = array_map( 'trim', $directors );
 		}
 
-		$terms = wp_get_object_terms( $this->id_post, Production_Companies::TAXONOMY_KEY );
-		foreach( $terms as $term ) {
-			$this->production_companies[] = new Production_Company( $term );
-		}
+		// $terms = wp_get_object_terms( $this->id_post, Production_Companies::TAXONOMY_KEY );
+		// foreach( $terms as $term ) {
+		// 	$this->production_companies[] = new Production_Company( $term );
+		// }
 		
 		return $this;
 	}
@@ -111,7 +112,7 @@ class Frontend_Movie extends Movie
 	public function populate_release_props(): self
 	{
 		try {
-			$release_date = get_field( 'release_date', $this->id );
+			$release_date = get_field( 'release_date', $this->id_post );
 			$this->release_datetime = new DateTime( $release_date );
 
 			if( $this->release_datetime ) {
@@ -134,13 +135,13 @@ class Frontend_Movie extends Movie
 	 */
 	public function populate_image_props(): self
 	{
-		$poster_id = get_post_thumbnail_id( $this->id );
+		$poster_id = get_post_thumbnail_id( $this->id_post );
 		if( !empty( $post_id ) ) {
 			$this->poster	= wp_get_attachment_image_url( $poster_id, 'large' );
 		}
 
 		// if no backdrop exists, fall back to poster
-		$backdrop_id = get_field( 'backdrop', $this->id );
+		$backdrop_id = get_field( 'backdrop', $this->id_post );
 		if( empty( $backdrop_id ) && !empty( $poster_id ) ) {
 			$backdrop_id = $poster_id;
 		}

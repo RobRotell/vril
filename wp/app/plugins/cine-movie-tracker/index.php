@@ -33,6 +33,7 @@ final class Cine
     public $rest_api;
     public $tinify;
     public $tmdb;
+    public $genres;
 
     // core subclasses
     public $admin_columns;
@@ -90,12 +91,12 @@ final class Cine
         require_once( self::$plugin_path_inc . 'core/class-last-updated.php' );
         require_once( self::$plugin_path_inc . 'core/class-post-types.php' );
         require_once( self::$plugin_path_inc . 'core/class-taxonomy-genres.php' );
-        require_once( self::$plugin_path_inc . 'core/class-taxonomy-production-companies.php' );
         require_once( self::$plugin_path_inc . 'core/class-transients.php' );
 
         // models
         require_once( self::$plugin_path_inc . 'models/class-frontend-movie.php' );
-        require_once( self::$plugin_path_inc . 'models/class-production-company.php' );
+        require_once( self::$plugin_path_inc . 'models/class-movie-simple-details.php' );
+        require_once( self::$plugin_path_inc . 'models/class-movie-full-details.php' );
         require_once( self::$plugin_path_inc . 'models/class-tmdb-movie-result.php' );
         require_once( self::$plugin_path_inc . 'models/class-movie-to-add.php' );
     }
@@ -107,7 +108,7 @@ final class Cine
             'plugins_loaded', 
             [ $this, 'load_classes' ] 
         );
-	}    
+    }    
 
 
     public function load_classes(): void
@@ -125,7 +126,6 @@ final class Cine
         $this->last_updated                     = new Cine\Core\Last_Updated;
         $this->post_types                       = new Cine\Core\Post_Types;
         $this->taxonomy_genres                  = new Cine\Core\Taxonomy_Genres;
-        $this->taxonomy_production_companies    = new Cine\Core\Taxonomy_Production_Companies;
         $this->transients                       = new Cine\Core\Transients;
     }
 

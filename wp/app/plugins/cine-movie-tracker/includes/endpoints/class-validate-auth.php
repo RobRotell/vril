@@ -28,7 +28,7 @@ final class Validate_Auth extends \Vril\Core_Classes\REST_API_Endpoint
 	 *
 	 * @return 	bool 	True, if user can edit posts
 	 */
-	public function check_permission( WP_REST_Request $request ): bool
+	public function check_permission( WP_REST_Request $request ): bool|WP_Error
 	{
 		$username 	= $request->get_param( 'username' );
 		$user_id 	= username_exists( $username );
@@ -38,7 +38,7 @@ final class Validate_Auth extends \Vril\Core_Classes\REST_API_Endpoint
 		} else {
 			return new WP_Error(
 				'cine/endpoint/validate_auth/invalid_username',
-				sprintf( 'Invalid username: "%s"', $username ),
+				sprintf( 'Invalid username: "%s".', $username ),
 				[
 					'status' => 401
 				]
@@ -81,27 +81,20 @@ final class Validate_Auth extends \Vril\Core_Classes\REST_API_Endpoint
 		$auth_token	= $req->get_param( 'auth' );
 
 		// prep response object
-		$res = $this->create_response_obj( 'valid' );
+		$res = new WP_REST_Response();
+		
+		$user = get_user_by( 'login', $username );
 
-		try {
-			$user = get_user_by( 'login', $username );
-			
-			// not necessarily redundant
-			if( !$user ) {
-				throw new Exception( sprintf( 'Invalid user: "%s"', $username ), 401 );
-			}
-			$is_valid = Cine()->auth->validate_auth_token( $user, $auth_token );
+		$is_valid = Cine()->auth->validate_auth_token( $user, $auth_token );
+		
+		$res->set_data(
+			[
+				'valid' => $is_valid,
+			]
+		);
+		$res->set_status( 200 );
 
-			$res->add_data( 'valid', $is_valid );
-						
-		} catch( Throwable $e ) {
-			$res->set_error( 
-				$e->getMessage(), 
-				$e->getCode() 
-			);
-		}
-
-		return rest_ensure_response( $res->package() );			
+		return rest_ensure_response( $res );			
 	}
 
 }

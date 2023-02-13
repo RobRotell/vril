@@ -36,7 +36,27 @@ final class Query_TMDb extends \Vril\Core_Classes\REST_API_Endpoint
 		// username and app password should be passed via Authorization header
 		$current_user = wp_get_current_user();
 
-		return $current_user->has_cap( 'edit_posts' );
+		if( 0 === $current_user->ID ) {
+			return new WP_Error(
+				'cine/endpoint/query_tmdb/invalid_user',
+				'Invalid authorization. Check your authorization and try again.',
+				[ 
+					'status' => 401
+				]
+			);
+		}
+
+		if( !$current_user->has_cap( 'edit_posts' ) ) {
+			return new WP_Error(
+				'cine/endpoint/query_tmdb/invalid_permissions',
+				'You are not permitted to perform this type of query.',
+				[ 
+					'status' => 403
+				]
+			);
+		}
+
+		return true;
 	}
 
 
@@ -72,44 +92,42 @@ final class Query_TMDb extends \Vril\Core_Classes\REST_API_Endpoint
 	{
 		$params = $req->get_params();
 
-		// don't exceed 
-
 		// prep response object
-		$res = $this->create_response_obj( 'meta', 'params', 'results' );
-		$res->add_data( 'params', $params );
+		$res = new WP_REST_Response();
 		
 		try {
 			$data = $this->get_from_transients( $params );
-			if( empty( $data ) ) {
-				$data = $this->get_from_query( $params );
+			if( false === $data ) {
+				$data = $this->query_tmdb( $params );
 			}
 
-			$res
-				->add_data( 'meta', $data['meta'] )
-				->add_data( 'results', $data['results'] );
+			$res->set_data( $data);
+			$res->set_status( 200 );
 
 		} catch( Throwable $e ) {
-			$res->set_error( $e->getMessage() );
+			$res->set_data( 
+				[ 
+					'error' => $e->getMessage() 
+				]
+			);
+			$res->set_status( $e->getCode() );
 		}
 
-		return rest_ensure_response( $res->package() );			
+		return rest_ensure_response( $res );			
 	}
 
 
 	/**
 	 * Get results from TMDB (from previous queries) from transients
 	 *
-	 * @param 	array 	$params 	Request params
-	 * @return 	array|false 		Array of "meta" and "results" if transient found; otherwise, false
+	 * @param 	array 	$params	Request params
+	 * @return 	array|false		Array of "meta" and "results" if transient found; otherwise, false
 	 */
 	private function get_from_transients( array $params ): array|false
 	{
-		return false;
+		$value = Transients::get_transient( 'query_tmdb', $params );
 
-		$key	= sprintf( 'query_tmdb_%s', http_build_query( $params ) );
-		$value 	= Transients::get_transient( $key );
-
-		if( isset( $value['meta'] ) && isset( $value['results'] ) ) {
+		if( false !== $value && isset( $value['meta'] ) && isset( $value['results'] ) ) {
 			return $value;
 		}
 
@@ -118,12 +136,12 @@ final class Query_TMDb extends \Vril\Core_Classes\REST_API_Endpoint
 
 
 	/**
-	 * Get results (and query meta) from TMDB
+	 * Get results(and query meta from TMDB
 	 *
-	 * @param 	array 	$params 	Request params
-	 * @return	array 				Contains "meta" and "results" props
+	 * @param 	array 	$params	Request params
+	 * @return	array			Contains "meta" and "results" props
 	 */
-	private function get_from_query( array $params ): array
+	private function query_tmdb( array $params ): array
 	{
 		$meta 		= [];
 		$results	= [];
@@ -137,7 +155,7 @@ final class Query_TMDb extends \Vril\Core_Classes\REST_API_Endpoint
 		
 		foreach( $search_results['page_results'] as $raw_tmdb_movie ) {
 			$result = new TMDb_Movie_Result( $raw_tmdb_movie );
-			$results[] = get_object_vars( $result );
+			$results[] = $result->package();
 		}
 
 		$meta['result_count']	= count( $results );
@@ -146,9 +164,8 @@ final class Query_TMDb extends \Vril\Core_Classes\REST_API_Endpoint
 
 		$data = compact( 'meta', 'results' );
 
-		// save transient for later queries
-		$transient_key = sprintf( 'query_tmdb_%s', http_build_query( $params ) );
-		Transients::set_transient( $transient_key, null, $data );
+		// cache data for later requests
+		Transients::set_transient( 'query_tmdb', $params, $data );
 
 		return $data;
 	}

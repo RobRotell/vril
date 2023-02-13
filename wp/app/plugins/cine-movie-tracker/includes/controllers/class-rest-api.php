@@ -7,6 +7,7 @@ use Cine\Controller\Endpoint;
 use Cine\Endpoints\Create_Auth as Endpoint_Create_Auth;
 use Cine\Endpoints\Delete_Movie as Endpoint_Delete_Movie;
 use Cine\Endpoints\Get_Movies as Endpoint_Get_Movies;
+use Cine\Endpoints\Get_Movie as Endpoint_Get_Movie;
 use Cine\Endpoints\Query_TMDb as Endpoint_Query_TMDb;
 use Cine\Endpoints\Update_Movie as Endpoint_Update_Movie;
 use Cine\Endpoints\Validate_Auth as Endpoint_Validate_Auth;
@@ -62,6 +63,7 @@ class REST_API
 		require_once( Cine()::$plugin_path_inc . '/endpoints/class-validate-auth.php' );
 
 		require_once( Cine()::$plugin_path_inc . '/endpoints/class-get-movies.php' );
+		require_once( Cine()::$plugin_path_inc . '/endpoints/class-get-movie.php' );
 
 		require_once( Cine()::$plugin_path_inc . '/endpoints/class-add-movie.php' );
 		require_once( Cine()::$plugin_path_inc . '/endpoints/class-update-movie.php' );
@@ -83,6 +85,7 @@ class REST_API
 			'validate-auth'	=> new Endpoint_Validate_Auth,
 
 			'get-movies' 	=> new Endpoint_Get_Movies,
+			'get-movie' 	=> new Endpoint_Get_Movie,
 						
 			'add-movie'		=> new Endpoint_Add_Movie,
 			'update-movie'	=> new Endpoint_Update_Movie,

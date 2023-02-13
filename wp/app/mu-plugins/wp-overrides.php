@@ -185,25 +185,36 @@ add_filter( 'gettext', function( string $translation = '' ): string {
 }, 9999 );
 
 
+// remove WordPress from document title
+add_filter( 'gettext', function( string $translation, string $text ) {
+	if( '%1$s &lsaquo; %2$s &#8212; WordPress' === $text ) {
+		$translation = 'Vril | Control';
+	}
+
+	return $translation;
+}, 9999, 2 );
+
+
+
 /**
  * Block unneeded REST API endpoints
  *
  * @param	array 	$endpoints 	Endpoints
  * @return 	array 				Filtered endpoints
  */
-add_filter( 'rest_endpoints', function( $endpoints ) {
+// add_filter( 'rest_endpoints', function( $endpoints ) {
 
-	// allow all endpoints for logged in admins
-	$current_user = wp_get_current_user();
-	if( in_array( 'administrator', $current_user->roles ) ) {
-		return $endpoints;
-	}
+// 	// allow all endpoints for logged in admins
+// 	$current_user = wp_get_current_user();
+// 	if( in_array( 'administrator', $current_user->roles ) ) {
+// 		return $endpoints;
+// 	}
 
-	foreach( $endpoints as $route => $endpoint ) {
-		if( !apply_filters( 'vril_whitelist_rest_route', false, $route ) ) {
-			unset( $endpoints[ $route ] );
-		}
-	}
+// 	foreach( $endpoints as $route => $endpoint ) {
+// 		if( !apply_filters( 'vril_whitelist_rest_route', false, $route ) ) {
+// 			unset( $endpoints[ $route ] );
+// 		}
+// 	}
 
-	return $endpoints;
-}, 9999 );
+// 	return $endpoints;
+// }, 9999 );

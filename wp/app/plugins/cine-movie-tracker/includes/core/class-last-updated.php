@@ -46,17 +46,15 @@ class Last_Updated
 			[ $this, 'update_timestamp' ] 
 		);
 		
-		foreach( [ Taxonomy_Genres::TAXONOMY_KEY, Taxonomy_Production_Companies::TAXONOMY_KEY ] as $taxonomy ) {
-			add_action( 
-				'create_' . $taxonomy,
-				[ $this, 'update_timestamp' ] 
-			);
+		add_action( 
+			'create_' . Taxonomy_Genres::TAXONOMY_KEY,
+			[ $this, 'update_timestamp' ] 
+		);
 
-			add_action( 
-				'edited_' . $taxonomy,
-				[ $this, 'update_timestamp' ] 
-			);
-		}
+		add_action( 
+			'edited_' . Taxonomy_Genres::TAXONOMY_KEY,
+			[ $this, 'update_timestamp' ] 
+		);
 	}
 
 

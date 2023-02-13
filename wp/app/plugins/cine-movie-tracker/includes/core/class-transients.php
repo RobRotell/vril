@@ -5,9 +5,7 @@ namespace Cine\Core;
 
 
 use Cine\Core\Post_Types;
-use Cine\Core\Taxonomies;
 use Cine\Core\Taxonomy_Genres;
-use Cine\Core\Taxonomy_Production_Companies;
 
 
 defined( 'ABSPATH' ) || exit;
@@ -48,17 +46,15 @@ class Transients
 			10, 4 
 		);
 
-		foreach( [ Taxonomy_Genres::TAXONOMY_KEY, Taxonomy_Production_Companies::TAXONOMY_KEY ] as $taxonomy ) {
-			add_action( 
-				'edited_' . $taxonomy,
-				[ $this, 'delete_transients' ] 
-			);
-			
-			add_action( 
-				'create_' . $taxonomy,
-				[ $this, 'delete_transients' ] 
-			);
-		}
+		add_action( 
+			'edited_' . Taxonomy_Genres::TAXONOMY_KEY,
+			[ $this, 'delete_transients' ] 
+		);
+		
+		add_action( 
+			'create_' . Taxonomy_Genres::TAXONOMY_KEY,
+			[ $this, 'delete_transients' ] 
+		);
 	}
 
 
@@ -87,13 +83,13 @@ class Transients
 	 * Wrapper for getting transient data
 	 *
 	 * @param 	string 	$name 	Name
-	 * @param	mixed	$extra  Extra data to use in generating transient key
+	 * @param	mixed	$arg  	Extra data to use in generating transient key
 	 * 
 	 * @return 	mixed|false		False, if transient doesn't exist; otherwise, data
 	 */
-	public static function get_transient( string $name, $data = null )
+	public static function get_transient( string $name, $arg = null )
 	{
-		$key = self::create_transient_key( $name, $data );
+		$key = self::create_transient_key( $name, $arg );
 		
 		return get_transient( $key );
 	}

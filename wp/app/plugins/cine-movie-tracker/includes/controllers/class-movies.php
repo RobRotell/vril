@@ -14,7 +14,56 @@ defined( 'ABSPATH' ) || exit;
 
 
 class Movies
-{
+{   
+	/**
+	 * Creates class for supporting movie functionality 
+	 *
+	 **/ 
+    public function __construct()
+    {
+		$this->add_wp_hooks();
+    }
+
+
+	/**
+	 * Hooks into WordPress
+	 *
+	 * @return 	void
+	 */
+	private function add_wp_hooks()
+	{
+		add_action( 
+			'after_setup_theme', 
+			[ 
+				$this, 'add_image_sizes'
+			], 
+		);
+	}	
+
+
+	/**
+	 * Add image sizes for movie poster and backdrop
+	 *
+	 * @return 	void
+	 */
+	public function add_image_sizes(): void
+	{
+		add_image_size(
+			'backdrop',
+			640,
+			300,
+			true
+		);
+
+		add_image_size(
+			'poster',
+			400,
+			600,
+			true
+		);		
+	}
+
+
 	/**
 	 * Quick check to confirm provided post or post ID is a movie
 	 *
